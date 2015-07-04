@@ -18,6 +18,7 @@ type VoteResult struct {
 	value int
 	vote  string
 	date  int64
+	user  string
 }
 
 func NewVote(name string, owner string) *Vote {
