@@ -32,18 +32,15 @@ func ConnectToRedis() *redis.Client {
 		DB:       0,  // use default DB
 	})
 
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
+//	pong, err := client.Ping().Result()
+//	fmt.Println(pong, err)
 	
 	return client
 }
 
 func LoadAuthToken(id string) (*auth.AuthToken, error) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	client := ConnectToRedis()
+	
 	data, err := client.Get(id).Result()
 	if err != nil {
 		return nil, errors.New("Not exist")
