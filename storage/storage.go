@@ -24,15 +24,12 @@ type VoteResult struct {
 	user  string
 }
 
-func ConnectToRedis() {
-	client := redis.NewClient(&redis.Options{
+func ConnectToRedis() *redis.Client {
+	return redis.NewClient(&redis.Options{
 	    Addr:     "localhost:6379",
 	    Password: "", // no password set
 	    DB:       0,  // use default DB
 	})
-	
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
 }
 
 func NewVote(name string, owner string) *Vote {
@@ -68,11 +65,7 @@ func NewVote(name string, owner string) *Vote {
 }
 
 func SaveUser(user auth.User) {
-	client := redis.NewClient(&redis.Options{
-	    Addr:     "localhost:6379",
-	    Password: "", // no password set
-	    DB:       0,  // use default DB
-	})
+	client := ConnectToRedis()
 	
 	// retain readability with json
     serialized, err := json.Marshal(user)
@@ -82,17 +75,15 @@ func SaveUser(user auth.User) {
 		
 		err := client.Set("user:" + user.Id, string(serialized), 0).Err()
 	    if err != nil {
-	        panic(err)
+	        panic/(err)
 	    }
 	}
+	
+	client.Close()
 } 
 
 func SaveAuthToken(at auth.AuthToken) {
-	client := redis.NewClient(&redis.Options{
-	    Addr:     "localhost:6379",
-	    Password: "", // no password set
-	    DB:       0,  // use default DB
-	})
+	client := ConnectToRedis()
 	
 	// retain readability with json
     serialized, err := json.Marshal(at)
@@ -105,4 +96,6 @@ func SaveAuthToken(at auth.AuthToken) {
 	        panic(err)
 	    }
 	}
+	
+	client.Close()
 }
