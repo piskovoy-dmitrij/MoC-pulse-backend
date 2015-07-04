@@ -2,12 +2,13 @@ package storage
 
 import (
 	"encoding/json"
-//	"errors"
+	"encoding/base64"
+	"errors"
 	"fmt"
 //	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"strconv"
 	"time"
-//	"log"
+	"log"
 )
 
 func NewVote(name string, owner string) *Vote {
@@ -28,15 +29,38 @@ func NewVote(name string, owner string) *Vote {
 	if err == nil {
 		fmt.Println("serialized data: ", string(serialized))
 
-		err := client.Set(id, string(serialized), 0).Err()
+		err := client.Set("vote:" + id, string(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
 	}
+	
+	client.Close()
 
 	return vote
 }
 
-func SaveVote() {
+func GetVote(id string) (*Vote, error) {
+	client := ConnectToRedis()
 	
+	val, err := client.Get("vote:" + id).Result()
+	
+	client.Close()
+	
+    if err == nil {
+		return nil, errors.New("Not found")
+        fmt.Println("key "+ id + " does not exists")
+    } else if err != nil {
+		log.Fatal("Failed to get vote by key " + id + ": ", err)
+		return nil, errors.New("Not found")
+    }
+	
+	var vote Vote
+	jsonString, err := base64.StdEncoding.DecodeString(val)
+	err = json.Unmarshal(jsonString, &vote)
+	if err != nil {
+		log.Fatal("Failed to decode Vote: ", err)
+	}
+	
+	return &vote, nil
 }

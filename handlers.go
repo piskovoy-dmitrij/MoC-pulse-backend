@@ -95,6 +95,8 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -126,6 +128,8 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -166,6 +170,8 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -191,6 +197,8 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -234,6 +242,8 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	rec := RegisterStatus{
 		Token: at.HMAC,
 	}
@@ -274,6 +284,8 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods'", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers'", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
