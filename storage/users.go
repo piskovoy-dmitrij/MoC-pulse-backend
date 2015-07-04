@@ -34,6 +34,7 @@ func SaveUser(user auth.User) {
 
 func SaveAuthToken(at auth.AuthToken) {
 	client := ConnectToRedis()
+	defer client.Close()
 
 	// retain readability with json
 	serialized, err := json.Marshal(at)

@@ -11,16 +11,16 @@ import (
 type Vote struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
-	owner string
-	date  int64
+	Owner string
+	Date  int64
 }
 
 type VoteResult struct {
-	id    string
-	value int
-	vote  string
-	date  int64
-	user  string
+	Id    string
+	Value int
+	Vote  string
+	Date  int64
+	User  string
 }
 
 func ConnectToRedis() *redis.Client {
@@ -29,13 +29,13 @@ func ConnectToRedis() *redis.Client {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	
+
 	return client
 }
 
 func LoadAuthToken(id string) (*auth.AuthToken, error) {
 	client := ConnectToRedis()
-	
+
 	data, err := client.Get(id).Result()
 	if err != nil {
 		return nil, errors.New("Not exist")

@@ -180,17 +180,20 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, error := authenticate(r.Header.Get("auth_token"))
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
 	id := ps.ByName("id")
-	vote := storage.Vote{
-		Id:   id,
-		Name: "debug",
+	vote, err := storage.GetVote(id)
+	if err != nil {
+		w.WriteHeader(404)
+		return
 	}
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
+	result := storage.NewResult(*vote, *user, value)
+	storage.SaveResult(result)
 	res := DoVoteStatus{
 		Vote: DoVote{
 			Name:  vote.Name,
@@ -267,17 +270,20 @@ func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httproute
 
 func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	token := r.FormValue("token")
-	_, error := authenticate(token)
+	user, error := authenticate(token)
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
 	id := r.PostFormValue("vote")
-	vote := storage.Vote{
-		Id:   id,
-		Name: "debug",
+	vote, err := storage.GetVote(id)
+	if err != nil {
+		w.WriteHeader(404)
+		return
 	}
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
+	result := storage.NewResult(*vote, *user, value)
+	storage.SaveResult(result)
 	res := DoVoteStatus{
 		Vote: DoVote{
 			Name:  vote.Name,
