@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"net/http"
 	"strconv"
 	"time"
-	"fmt"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -90,7 +90,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	name := r.PostFormValue("name")
-	vote := redis.NewVote(name, user.Id)
+	vote := storage.NewVote(name, user.Id)
 	res := VoteStatus{
 		Vote: *vote,
 	}
@@ -211,12 +211,12 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	at := auth.NewAuthToken(*user, time.Now(), secret)
 	//TODO store to redis uset and at
-	
+
 	fmt.Println("Saving to Redis")
-	
+
 	storage.SaveUser(*user)
 	storage.SaveAuthToken(*at)
-	
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	rec := RegisterStatus{
 		Token: at.HMAC,
@@ -227,7 +227,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r)
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -249,7 +249,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	id := r.PostFormValue("vote")
-	vote := redis.Vote{
+	vote := storage.Vote{
 		Id:   id,
 		Name: "debug",
 	}
