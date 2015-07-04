@@ -80,7 +80,7 @@ func SaveUser(user auth.User) {
 	if err == nil {
 		fmt.Println("serialized data: ", string(serialized))
 
-		err := client.Set(user.Id, string(serialized), 0).Err()
+		err := client.Set("user:"+user.Id, string(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
@@ -113,18 +113,18 @@ func GetAllUsers() []auth.User {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	users_keys := client.Keys("user:*")
+	users_keys, _ := client.Keys("user:*").Result()
 	var users []auth.User
 	for _, value := range users_keys {
 		item, err := LoadUser(value)
 		if err != nil {
-			users = append(users, item)
+			users = append(users, *item)
 		}
 	}
 	return users
 }
 
-func LoadUser(id string) (auth.User, error) {
+func LoadUser(id string) (*auth.User, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -134,7 +134,7 @@ func LoadUser(id string) (auth.User, error) {
 	if err != nil {
 		return nil, errors.New("Not exist")
 	} else {
-		user := auth.User{}
+		user := &auth.User{}
 		json.Unmarshal([]byte(data), &user)
 		return user, nil
 	}

@@ -232,12 +232,8 @@ func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httproute
 		w.WriteHeader(400)
 		return
 	}
-	err := notificationSender.Send([]auth.User{*user}, "Hello world!")
-	if err != nil {
-		w.WriteHeader(500)
-		fatal(err.Error())
-		return
-	}
+	notificationSender.Send([]auth.User{*user}, storage.Vote{Name: "Hello world"})
+
 	w.WriteHeader(200)
 }
 
