@@ -8,7 +8,6 @@ import (
 	"gopkg.in/redis.v3"
 	"strconv"
 	"time"
-	"log"
 )
 
 type Vote struct {
@@ -26,7 +25,7 @@ type VoteResult struct {
 	user  string
 }
 
-func ConnectToRedis() *redis.Client {
+func ConnectToRedis() {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -35,8 +34,6 @@ func ConnectToRedis() *redis.Client {
 
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
-	
-	return client
 }
 
 func NewVote(name string, owner string) *Vote {
@@ -71,26 +68,32 @@ func NewVote(name string, owner string) *Vote {
 }
 
 func SaveUser(user auth.User) {
-	client := ConnectToRedis()
-	
-	// retain readability with json
-    serialized, err := json.Marshal(user)
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 
-    if err == nil {
-        fmt.Println("serialized data: ", string(serialized))
-		
-		err := client.Set("user:" + user.Id, string(serialized), 0).Err()
-	    if err != nil {
-	        log.Fatal("Failed to set user into redis: ", err)
-	    }
+	// retain readability with json
+	serialized, err := json.Marshal(user)
+
+	if err == nil {
+		fmt.Println("serialized data: ", string(serialized))
+
+		err := client.Set("user:"+user.Id, string(serialized), 0).Err()
+		if err != nil {
+			panic(err)
+		}
 	}
-	
-	client.Close()
-} 
+}
 
 func SaveAuthToken(at auth.AuthToken) {
-	client := ConnectToRedis()
-	
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
 	// retain readability with json
 	serialized, err := json.Marshal(at)
 
@@ -105,8 +108,11 @@ func SaveAuthToken(at auth.AuthToken) {
 }
 
 func GetAllUsers() []auth.User {
-	client := ConnectToRedis()
-	
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 	users_keys, _ := client.Keys("user:*").Result()
 	var users []auth.User
 	for _, value := range users_keys {
@@ -115,22 +121,37 @@ func GetAllUsers() []auth.User {
 			users = append(users, *item)
 		}
 	}
-	client.Close()
-
 	return users
 }
 
 func LoadUser(id string) (*auth.User, error) {
-	client := ConnectToRedis()
-	
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 	data, err := client.Get(id).Result()
-	client.Close()
-	
 	if err != nil {
 		return nil, errors.New("Not exist")
 	} else {
 		user := &auth.User{}
 		json.Unmarshal([]byte(data), &user)
 		return user, nil
+	}
+}
+
+func LoadAuthToken(id string) (*auth.AuthToken, error) {
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	data, err := client.Get(id).Result()
+	if err != nil {
+		return nil, errors.New("Not exist")
+	} else {
+		at := &auth.AuthToken{}
+		json.Unmarshal([]byte(data), &at)
+		return at, nil
 	}
 }

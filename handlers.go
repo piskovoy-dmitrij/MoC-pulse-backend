@@ -65,22 +65,21 @@ func authenticate(token string) (*auth.User, error) {
 			DevId:  "",
 		}, nil
 	}
-	//TODO load AuthToken from redis by token
-	at := &auth.AuthToken{
-		Info: token,
-		HMAC: "ggggg",
+	at, err := storage.LoadAuthToken(token)
+	if err != nil {
+		return nil, err
 	}
 	info, err := at.GetTokenInfo(secret)
 	if err != nil {
 		return nil, err
 	}
-	//TODO load user
-	return &auth.User{
-		Id:     info.Id,
-		Email:  "test@test.com",
-		Device: 2,
-		DevId:  "",
-	}, nil
+	user, err := storage.LoadUser("user:" + info.Id)
+	if err != nil {
+		return nil, err
+	} else {
+		return user, nil
+	}
+
 }
 
 func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
