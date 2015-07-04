@@ -32,7 +32,16 @@ func params() string {
 }
 
 func main() {
-	notificationSender = notification.NewSender("", "", "", "", "", "", "", "", "")
+	notificationSender = notification.NewSender(
+		"",
+		"",
+		"",
+		"",
+		"FIKIPKBtZGZpWBpeUVPVBA",
+		"vote",
+		"pulse@masterofcode.com",
+		"MoC Pulse",
+		"Test Subject")
 	router := httprouter.New()
 	router.GET("/votes", getVotes)
 	router.POST("/votes", createVote)
