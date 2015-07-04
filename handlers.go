@@ -216,3 +216,17 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(500)
 	}
 }
+
+func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	user, error := authenticate(r)
+	if error != nil {
+		w.WriteHeader(400)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(500)
+		fatal(err.Error())
+		return
+	}
+	w.WriteHeader(200)
+}
