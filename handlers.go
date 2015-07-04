@@ -204,6 +204,11 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	lastname := r.PostFormValue("last_name")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
+	token := r.PostFormValue("tiken")
+	if token != "BE7C411D475AEA4CF1D7B472D5BD1" {
+		w.WriteHeader(403)
+		return
+	}
 	user, err := storage.LoadUser("user:" + id)
 	if err != nil {
 		user.Device = device
