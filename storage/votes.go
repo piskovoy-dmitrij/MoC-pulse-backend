@@ -75,7 +75,7 @@ func SaveResult(result *VoteResult) {
 	if err == nil {
 		fmt.Println("serialized data: ", string(serialized))
 
-		err := client.Set("vote:"+result.Id, string(serialized), 0).Err()
+		err := client.Set("result:"+result.Id, string(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
@@ -88,5 +88,17 @@ func NewResult(vote Vote, user auth.User, value int) *VoteResult {
 		Value: value,
 		Vote:  vote.Id,
 		Date:  time.Now().UnixNano(),
+	}
+}
+
+func isVotedByUser(vote Vote, user auth.User) bool {
+	client := ConnectToRedis()
+	defer client.Close()
+
+	_, err := client.Get("result:" + vote.Id + ":" + user.Id).Result()
+	if err == nil {
+		return false
+	} else {
+		return true
 	}
 }
