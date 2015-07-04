@@ -21,8 +21,26 @@ type VoteStatus struct {
 	Vote redis.Vote `json:"vote"`
 }
 
+type VoteResultStatus struct {
+	Vote VoteWithResult `json:"vote"`
+}
+
+type VoteWithResult struct {
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Result Result `json:"result"`
+}
+
+type Result struct {
+	Yellow    int `json:"yellow"`
+	Green     int `json:"green"`
+	Red       int `json:"red"`
+	AllUsers  int `json:"all_users"`
+	VoteUsers int `json:"vote_users"`
+}
+
 func authenticate(r *http.Request) (*auth.User, error) {
-	token := r.Header.Get("token")
+	token := r.Header.Get("auth_token")
 	if token == "123123" {
 		return &auth.User{
 			Id:     "debug",
@@ -66,13 +84,32 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
-func getVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r)
+func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, error := authenticate(r)
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
-	if json.NewEncoder(w).Encode(user) != nil {
+	id := ps.ByName("id")
+	vote := redis.Vote{
+		Id:   id,
+		Name: "debug",
+	}
+	res := VoteResultStatus{
+		Vote: VoteWithResult{
+			Name: vote.Name,
+			Id:   vote.Id,
+			Result: Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
 }
@@ -102,13 +139,17 @@ func doVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	id := r.PostFormValue("id")
 	email := r.PostFormValue("email")
+	firstname := r.PostFormValue("firstname")
+	lastname := r.PostFormValue("lastname")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
 	user := &auth.User{
-		Id:     id,
-		Email:  email,
-		Device: device,
-		DevId:  dev_id,
+		Id:        id,
+		Email:     email,
+		Device:    device,
+		DevId:     dev_id,
+		FirstName: firstname,
+		LastName:  lastname,
 	}
 
 	at := auth.NewAuthToken(*user, time.Now(), secret)

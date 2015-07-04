@@ -11,10 +11,12 @@ import (
 )
 
 type User struct {
-	Id     string `json:"id"`
-	Email  string `json:"email"`
-	Device int    `json:"device"`
-	DevId  string `json:"dev_id"`
+	Id        string `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
+	Device    int    `json:"device"`
+	DevId     string `json:"dev_id"`
 }
 
 type TokenInfo struct {
