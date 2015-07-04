@@ -98,7 +98,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -111,6 +111,8 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	id := ps.ByName("id")
+	
+	//TODO add redis get vote method
 	vote := storage.Vote{
 		Id:   id,
 		Name: "debug",
@@ -131,7 +133,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -173,27 +175,24 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
 }
 
 func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	user, error := authenticate(r.Header.Get("auth_token"))
+	_, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
 	id := ps.ByName("id")
-	vote, err := storage.GetVote(id)
-	if err != nil {
-		w.WriteHeader(404)
-		return
+	vote := storage.Vote{
+		Id:   id,
+		Name: "debug",
 	}
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	result := storage.NewResult(*vote, *user, value)
-	storage.SaveResult(result)
 	res := DoVoteStatus{
 		Vote: DoVote{
 			Name:  vote.Name,
@@ -203,7 +202,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -216,7 +215,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	lastname := r.PostFormValue("last_name")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
-	token := r.PostFormValue("token")
+	token := r.PostFormValue("tiken")
 	if token != "BE7C411D475AEA4CF1D7B472D5BD1" {
 		w.WriteHeader(403)
 		return
@@ -248,7 +247,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	rec := RegisterStatus{
 		Token: at.HMAC,
 	}
@@ -270,20 +269,17 @@ func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httproute
 
 func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	token := r.FormValue("token")
-	user, error := authenticate(token)
+	_, error := authenticate(token)
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
 	id := r.PostFormValue("vote")
-	vote, err := storage.GetVote(id)
-	if err != nil {
-		w.WriteHeader(404)
-		return
+	vote := storage.Vote{
+		Id:   id,
+		Name: "debug",
 	}
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	result := storage.NewResult(*vote, *user, value)
-	storage.SaveResult(result)
 	res := DoVoteStatus{
 		Vote: DoVote{
 			Name:  vote.Name,
@@ -293,7 +289,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}

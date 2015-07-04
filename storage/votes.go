@@ -16,8 +16,8 @@ func NewVote(name string, owner string) *Vote {
 
 	vote := &Vote{
 		Name:  name,
-		Date:  time.Now().UnixNano(),
-		Owner: owner,
+		date:  time.Now().UnixNano(),
+		owner: owner,
 		Id:    id,
 	}
 
@@ -85,9 +85,24 @@ func SaveResult(result *VoteResult) {
 func NewResult(vote Vote, user auth.User, value int) *VoteResult {
 	return &VoteResult{
 		Id:    vote.Id + ":" + user.Id,
-		Value: value,
-		Vote:  vote.Id,
-		Date:  time.Now().UnixNano(),
+		value: value,
+		vote:  vote.Id,
+		date:  time.Now().UnixNano(),
+	}
+}
+
+func LoadVoteResult(id string) (*VoteResult, error) {
+	client := ConnectToRedis()
+
+	data, err := client.Get(id).Result()
+	client.Close()
+
+	if err != nil {
+		return nil, errors.New("Not exist")
+	} else {
+		voteResult := &VoteResult{}
+		json.Unmarshal([]byte(data), &voteResult)
+		return voteResult, nil
 	}
 }
 
@@ -110,15 +125,25 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 //	if err != nil {
 //		fmt.Println(err)
 //	}
-//	var results []VoteResult
+	
+//	var yellow int
+//	var red int
+//	var green int
+		
 //	for _, value := range results_keys {
 //		fmt.Println(value)
-//		item, err := LoadUser(value)
+//		item, err := LoadVoteResult(value)
 //		if err == nil {
-//			users = append(users, *item)
+//			if(item.Value == 0) {
+//				red = red + 1
+//			} else if(item.Value == 1) {
+//				yellow = yellow + 1
+//			} else {
+//				green = green + 1
+//			}
 //		}
 //	}
 //	client.Close()
 
-//	return users
+//	return 
 //}
