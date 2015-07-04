@@ -60,8 +60,17 @@ func GetVote(id string) (*Vote, error) {
 	err = json.Unmarshal(jsonString, &vote)
 	if err != nil {
 		log.Fatal("Failed to decode Vote: ", err)
-	}
+	}	
+	
+	return &vote, nil
+}
 
+func GetVoteWithResults(id string) (*Vote, error) {
+	vote := Vote {
+		Id:   id,
+		Name: "debug",
+	}
+	
 	return &vote, nil
 }
 
