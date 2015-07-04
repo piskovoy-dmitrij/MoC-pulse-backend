@@ -16,9 +16,7 @@ func SaveUser(user auth.User) {
 	// retain readability with json
     serialized, err := json.Marshal(user)
 
-    if err == nil {
-        fmt.Println("serialized data: ", string(serialized))
-		
+    if err == nil {		
 		err := client.Set("user:" + user.Id, string(serialized), 0).Err()
 	    if err != nil {
 	        log.Fatal("Failed to set user into redis: ", err)
