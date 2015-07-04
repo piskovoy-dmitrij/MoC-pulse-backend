@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"gopkg.in/redis.v3"
 	"encoding/json"
 	"strconv"
 	"time"
+	"fmt"
 )
 
 type Vote struct {
@@ -29,8 +31,6 @@ func ConnectToRedis() {
 	    DB:       0,  // use default DB
 	})
 	
-	defer client.Close()
-	
 	pong, err := client.Ping().Result()
 	fmt.Println(pong, err)
 }
@@ -45,47 +45,64 @@ func NewVote(name string, owner string) *Vote {
 		Id:    id,
 	} 
 	
+	client := redis.NewClient(&redis.Options{
+	    Addr:     "localhost:6379",
+	    Password: "", // no password set
+	    DB:       0,  // use default DB
+	})
+	
 	// retain readability with json
     serialized, err := json.Marshal(vote)
 
     if err == nil {
         fmt.Println("serialized data: ", string(serialized))
+		
+		
+		err := client.Set(id, string(serialized), 0).Err()
+	    if err != nil {
+	        panic(err)
+	    }
 	}
 	
-	setKey(id, serialized)
-	
-	return &Vote{
-		Name:  name,
-		date:  time.Now().UnixNano(),
-		owner: owner,
-		Id:    id,
-	}
+	return vote
 }
 
-func GetVoteByID(Id string) *Vote {
-	vote, err := getKey(Id)
+func SaveUser(user auth.User) {
+	client := redis.NewClient(&redis.Options{
+	    Addr:     "localhost:6379",
+	    Password: "", // no password set
+	    DB:       0,  // use default DB
+	})
+	
+	// retain readability with json
+    serialized, err := json.Marshal(user)
+
+    if err == nil {
+        fmt.Println("serialized data: ", string(serialized))
+		
+		err := client.Set(user.Id, string(serialized), 0).Err()
+	    if err != nil {
+	        panic(err)
+	    }
+	}
 } 
 
-func setKey(key string, value string) {
-	client := ConnectToRedis()
+func SaveAuthToken(at auth.AuthToken) {
+	client := redis.NewClient(&redis.Options{
+	    Addr:     "localhost:6379",
+	    Password: "", // no password set
+	    DB:       0,  // use default DB
+	})
 	
-	err := client.Set("key", "value", 0).Err()
-    if err != nil {
-        panic(err)
-    }
-}
+	// retain readability with json
+    serialized, err := json.Marshal(at)
 
-func getKey(key string) {
-	client := ConnectToRedis()
-	
-	val, err := client.Get(key).Result()
-    if err == redis.Nil {
-        fmt.Println(key + " does not exists")
-    } else if err != nil {
-        panic(err)
-    } else {
-        fmt.Println("returning by key: ", val)
-    }
-	
-	return val
+    if err == nil {
+        fmt.Println("serialized data: ", string(serialized))
+				
+		err := client.Set(at.HMAC, string(serialized), 0).Err()
+	    if err != nil {
+	        panic(err)
+	    }
+	}
 }
