@@ -3,10 +3,10 @@ package notification
 import (
 	"bytes"
 	"fmt"
-	"net/smtp"
 	"time"
 
 	"github.com/alexjlockwood/gcm"
+	"github.com/mostafah/mandrill"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/virushuo/Go-Apns"
 )
@@ -16,11 +16,11 @@ type Sender struct {
 	AppleCertFilename string
 	AppleKeyFilename  string
 	AppleServer       string
-	SmtpAuthUsername  string
-	SmtpAuthPassword  string
-	SmtpAuthHost      string
-	SmtpServer        string
-	SmtpSender        string
+	MandrillKey       string
+	MandrillTemplate  string
+	MandrillFromEmail string
+	MandrillFromName  string
+	MandrillSubject   string
 }
 
 type Devices struct {
@@ -39,27 +39,27 @@ func NewSender(GoogleApiKey string,
 	AppleCertFilename string,
 	AppleKeyFilename string,
 	AppleServer string,
-	SmtpAuthUsername string,
-	SmtpAuthPassword string,
-	SmtpAuthHost string,
-	SmtpServer string,
-	SmtpSender string) *Sender {
+	MandrillKey string,
+	MandrillTemplate string,
+	MandrillFromEmail string,
+	MandrillFromName string,
+	MandrillSubject string) *Sender {
 
 	return &Sender{
 		GoogleApiKey,
 		AppleCertFilename,
 		AppleKeyFilename,
 		AppleServer,
-		SmtpAuthUsername,
-		SmtpAuthPassword,
-		SmtpAuthHost,
-		SmtpServer,
-		SmtpSender}
+		MandrillKey,
+		MandrillTemplate,
+		MandrillFromEmail,
+		MandrillFromName,
+		MandrillSubject,
+	}
 }
 
 func (this *Sender) Send(users []auth.User, message string) error {
 
-	var str string
 	var buffer bytes.Buffer
 	var devices Devices
 
@@ -80,26 +80,25 @@ func (this *Sender) Send(users []auth.User, message string) error {
 		sender := &gcm.Sender{ApiKey: this.GoogleApiKey}
 		_, err := sender.Send(msg, 2)
 		if err != nil {
-			buffer.WriteString(fmt.Sprintf("Sending notification to Google device failed: %s\n", err))
+			buffer.WriteString(fmt.Sprintf("Sending notification to Google device failed: %s\n", err.Error()))
 		}
 	}
 
 	if len(devices.AppleIds) > 0 {
 		apn, err := apns.New(this.AppleCertFilename, this.AppleKeyFilename, this.AppleServer, 1*time.Second)
 		if err != nil {
-			str = fmt.Sprintf("Sending notification to Apple device failed: %s\n", err)
-			buffer.WriteString(str)
+			buffer.WriteString(fmt.Sprintf("Sending notification to Apple device failed: %s\n", err.Error()))
 		} else {
 			for i := range devices.AppleIds {
 				payload := apns.Payload{}
-				payload.Aps.Alert.Body = message
+				payload.Aps.Alert.Body = message //TODO
 				notification := apns.Notification{}
 				notification.DeviceToken = devices.AppleIds[i]
 				notification.Identifier = 0
 				notification.Payload = &payload
 				err = apn.Send(&notification)
 				if err != nil {
-					buffer.WriteString(fmt.Sprintf("Sending notification to Apple device failed: %s\n", err))
+					buffer.WriteString(fmt.Sprintf("Sending notification to Apple device failed: %s\n", err.Error()))
 				}
 			}
 			apn.Close()
@@ -107,24 +106,32 @@ func (this *Sender) Send(users []auth.User, message string) error {
 	}
 
 	if len(devices.Emails) > 0 {
-		auth := smtp.PlainAuth(
-			"",
-			this.SmtpAuthUsername,
-			this.SmtpAuthPassword,
-			this.SmtpAuthHost,
-		)
-		err := smtp.SendMail(
-			this.SmtpServer,
-			auth,
-			this.SmtpSender,
-			devices.Emails,
-			[]byte(message),
-		)
+		mandrill.Key = this.MandrillKey
+		err := mandrill.Ping()
 		if err != nil {
-			buffer.WriteString(fmt.Sprintf("Sending notification to Email failed: %s\n", err))
+			buffer.WriteString(fmt.Sprintf("Sending notification to Email failed: %s\n", err.Error()))
+		} else {
+			data := make(map[string]string)
+			data["QUESTION"] = "Test question"
+			data["VOTE"] = "Test vote"
+			data["TOKEN"] = "Test token"
+			for i := range devices.Emails {
+				msg := mandrill.NewMessageTo(devices.Emails[i], "")
+				msg.Subject = this.MandrillSubject
+				msg.FromEmail = this.MandrillFromEmail
+				msg.FromName = this.MandrillFromName
+				res, err := msg.SendTemplate(this.MandrillTemplate, data, false)
+				if err != nil {
+					buffer.WriteString(fmt.Sprintf("Sending notification to Email failed: %s\n", err.Error()))
+				}
+			}
+
 		}
 	}
-
-	return fmt.Errorf(buffer.String())
+	if len(buffer.String()) > 0 {
+		return fmt.Errorf(buffer.String())
+	} else {
+		return nil
+	}
 
 }

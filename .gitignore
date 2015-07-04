@@ -1,3 +1,4 @@
 #IDE
 /.idea/*
 /MoC-pulse-backend
+*.exe
