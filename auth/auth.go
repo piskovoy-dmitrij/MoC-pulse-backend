@@ -11,10 +11,10 @@ import (
 )
 
 type User struct {
-	Id     string `json: id`
-	Email  string `json: email`
-	Device int    `json: device`
-	DevId  string `json: dev_id`
+	Id     string `json:"id"`
+	Email  string `json:"email"`
+	Device int    `json:"device"`
+	DevId  string `json:"dev_id"`
 }
 
 type TokenInfo struct {
@@ -68,12 +68,13 @@ func (at *AuthToken) GetTokenInfo(secret string) (*TokenInfo, error) {
 		log.Fatal("Failed to decode TokenInfo: ", err)
 	}
 
-	/* Check if the token is expired. */
-	if time.Now().Unix() > ti.ExpirationDate.Unix() {
-		return nil, errors.New("The token is expired.")
-	} else {
-		return &ti, nil
-	}
+	//	/* Check if the token is expired. */
+	//	if time.Now().Unix() > ti.ExpirationDate.Unix() {
+	//		return nil, errors.New("The token is expired.")
+	//	} else {
+	//		return &ti, nil
+	//	}
+	return &ti, nil
 }
 
 func (ti *TokenInfo) ToBase64() string {
