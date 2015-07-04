@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/FogCreek/mini"
 	"github.com/julienschmidt/httprouter"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
+	//	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"net/http"
 )
 
@@ -32,16 +34,6 @@ func params() string {
 }
 
 func main() {
-	notificationSender = notification.NewSender(
-		"",
-		"",
-		"",
-		"",
-		"FIKIPKBtZGZpWBpeUVPVBA",
-		"vote",
-		"pulse@masterofcode.com",
-		"MoC Pulse",
-		"Test Subject")
 	router := httprouter.New()
 	router.GET("/votes", getVotes)
 	router.POST("/votes", createVote)
@@ -49,6 +41,6 @@ func main() {
 	router.PUT("/votes/:id", doVote)
 	router.GET("/vote", emailVote)
 	router.POST("/user", registerUser)
-	router.POST("/test_notification_sending", testNotificationSending)
 	http.ListenAndServe(":8080", router)
+
 }

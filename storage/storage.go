@@ -2,12 +2,10 @@ package storage
 
 import (
 	"encoding/json"
-	"fmt"
 	"errors"
-	"gopkg.in/redis.v3"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-//	"strconv"
-//	"time"
+	"gopkg.in/redis.v3"
 )
 
 type Vote struct {
@@ -31,9 +29,6 @@ func ConnectToRedis() *redis.Client {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-
-//	pong, err := client.Ping().Result()
-//	fmt.Println(pong, err)
 	
 	return client
 }
