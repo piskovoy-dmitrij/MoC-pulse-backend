@@ -2,12 +2,12 @@ package storage
 
 import (
 	"encoding/json"
-	"errors"
+//	"errors"
 	"fmt"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+//	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"strconv"
 	"time"
-	"log"
+//	"log"
 )
 
 func NewVote(name string, owner string) *Vote {
@@ -20,12 +20,8 @@ func NewVote(name string, owner string) *Vote {
 		Id:    id,
 	}
 
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-
+	client := ConnectToRedis()
+	
 	// retain readability with json
 	serialized, err := json.Marshal(vote)
 

@@ -3,9 +3,11 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
+	"errors"
 	"gopkg.in/redis.v3"
-	"strconv"
-	"time"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+//	"strconv"
+//	"time"
 )
 
 type Vote struct {

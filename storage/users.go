@@ -44,11 +44,11 @@ func SaveAuthToken(at auth.AuthToken) {
 	}
 }
 
-func GetAuthToken(token string) *auth.AuthToken {
-	client := ConnectToRedis()
+//func GetAuthToken(token string) *auth.AuthToken {
+//	client := ConnectToRedis()
 	
 	
-}
+//}
 
 func GetAllUsers() []auth.User {
 	client := ConnectToRedis()
