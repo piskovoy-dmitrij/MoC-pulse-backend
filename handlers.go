@@ -95,6 +95,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Vote: *vote,
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -125,6 +126,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -164,6 +166,7 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Votes: votes[0:2],
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -188,6 +191,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -200,24 +204,32 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	lastname := r.PostFormValue("last_name")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
-	user := &auth.User{
-		Id:        id,
-		Email:     email,
-		Device:    device,
-		DevId:     dev_id,
-		FirstName: firstname,
-		LastName:  lastname,
+	user, err := storage.LoadUser("user:" + id)
+	if err != nil {
+		user.Device = device
+		user.DevId = dev_id
+		user.Email = email
+		user.FirstName = firstname
+		user.LastName = lastname
+	} else {
+		user = &auth.User{
+			Id:        id,
+			Email:     email,
+			Device:    device,
+			DevId:     dev_id,
+			FirstName: firstname,
+			LastName:  lastname,
+		}
 	}
 
 	at := auth.NewAuthToken(*user, time.Now(), secret)
-	//TODO store to redis uset and at
-
 	fmt.Println("Saving to Redis")
 
 	storage.SaveUser(*user)
 	storage.SaveAuthToken(*at)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	rec := RegisterStatus{
 		Token: at.HMAC,
 	}
@@ -257,6 +269,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
