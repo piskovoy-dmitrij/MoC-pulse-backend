@@ -39,6 +39,19 @@ type Result struct {
 	VoteUsers int `json:"vote_users"`
 }
 
+type VotesStatus struct {
+	Votes []VoteWithResult `json:"votes"`
+}
+
+type DoVoteStatus struct {
+	Vote DoVote `json:"vote"`
+}
+
+type DoVote struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
 func authenticate(r *http.Request) (*auth.User, error) {
 	token := r.Header.Get("auth_token")
 	if token == "123123" {
@@ -115,23 +128,64 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r)
+	_, error := authenticate(r)
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
-	if json.NewEncoder(w).Encode(user) != nil {
+	votes := [...]VoteWithResult{
+		VoteWithResult{
+			Name: "Vote 1",
+			Id:   "sgdsfgsdfgsdfg",
+			Result: Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+		VoteWithResult{
+			Name: "Vote 2",
+			Id:   "sgdssdfgggsdfgsdfg",
+			Result: Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+	}
+	res := VotesStatus{
+		Votes: votes[0:2],
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
 }
 
-func doVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r)
+func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	_, error := authenticate(r)
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
-	if json.NewEncoder(w).Encode(user) != nil {
+	id := ps.ByName("id")
+	vote := redis.Vote{
+		Id:   id,
+		Name: "debug",
+	}
+	value, _ := strconv.Atoi(r.PostFormValue("value"))
+	res := DoVoteStatus{
+		Vote: DoVote{
+			Name:  vote.Name,
+			Value: value,
+		},
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
 }
