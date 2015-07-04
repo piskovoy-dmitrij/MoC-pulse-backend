@@ -1,9 +1,32 @@
 package main
 
 import (
-	"github.com/julienschmidt/httprouter"
-	"net/http"
+    "fmt"
+    "github.com/FogCreek/mini"
+    "github.com/julienschmidt/httprouter"
+    "net/http"
 )
+
+func fatal(v interface{}) {
+	fmt.Println(v)
+}
+
+func chk(err error) {
+	if err != nil {
+		fatal(err)
+	}
+}
+
+func params() string {
+	cfg, err := mini.LoadConfiguration(".pulseconfigrc")
+
+    chk(err)
+
+	info := fmt.Sprintf("db=%s",
+		cfg.String("db", "127.0.0.1"),
+	)
+	return info
+}
 
 func main() {
 	router := httprouter.New()
