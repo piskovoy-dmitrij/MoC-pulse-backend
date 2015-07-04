@@ -62,5 +62,7 @@ func GetVote(id string) (*Vote, error) {
 		log.Fatal("Failed to decode Vote: ", err)
 	}
 	
+	
+	
 	return &vote, nil
 }

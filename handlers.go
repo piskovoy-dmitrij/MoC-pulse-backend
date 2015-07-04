@@ -109,6 +109,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	id := ps.ByName("id")
+	
 	vote := storage.Vote{
 		Id:   id,
 		Name: "debug",
