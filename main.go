@@ -3,6 +3,8 @@ package main
 import (
     "fmt"
     "github.com/FogCreek/mini"
+    "github.com/julienschmidt/httprouter"
+    "net/http"
 )
 
 func fatal(v interface{}) {
@@ -20,9 +22,6 @@ func params() string {
 
     chk(err)
 
-    fmt.Printf("params")
-
-
 	info := fmt.Sprintf("db=%s",
 		cfg.String("db", "127.0.0.1"),
 	)
@@ -30,6 +29,11 @@ func params() string {
 }
 
 func main() {
-    fmt.Printf("hello, world\n")
+	router := httprouter.New()
+	router.GET("/votes", getVotes)
+	router.POST("/votes", createVote)
+	router.GET("/votes/:id", getVote)
+	router.PUT("/votes/:id", doVote)
+	router.POST("/user", registerUser)
+	http.ListenAndServe(":8080", router)
 }
-
