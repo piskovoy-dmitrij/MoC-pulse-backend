@@ -90,6 +90,8 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	name := r.PostFormValue("name")
 	vote := storage.NewVote(name, user.Id)
+	users, _ := storage.GetUsers()
+	notificationSender.Send(users, *vote)
 	res := VoteStatus{
 		Vote: *vote,
 	}
