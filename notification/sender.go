@@ -120,7 +120,7 @@ func (this *Sender) Send(users []auth.User, message string) error {
 				msg.Subject = this.MandrillSubject
 				msg.FromEmail = this.MandrillFromEmail
 				msg.FromName = this.MandrillFromName
-				res, err := msg.SendTemplate(this.MandrillTemplate, data, false)
+				_, err := msg.SendTemplate(this.MandrillTemplate, data, false)
 				if err != nil {
 					buffer.WriteString(fmt.Sprintf("Sending notification to Email failed: %s\n", err.Error()))
 				}

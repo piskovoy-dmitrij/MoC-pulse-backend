@@ -43,7 +43,7 @@ func NewVote(name string, owner string) *Vote {
 		date:  time.Now().UnixNano(),
 		owner: owner,
 		Id:    id,
-	} 
+	}
 	
 	client := redis.NewClient(&redis.Options{
 	    Addr:     "localhost:6379",
@@ -80,7 +80,7 @@ func SaveUser(user auth.User) {
     if err == nil {
         fmt.Println("serialized data: ", string(serialized))
 		
-		err := client.Set(user.Id, string(serialized), 0).Err()
+		err := client.Set("user:" + user.Id, string(serialized), 0).Err()
 	    if err != nil {
 	        panic(err)
 	    }
