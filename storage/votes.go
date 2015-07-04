@@ -65,15 +65,6 @@ func GetVote(id string) (*Vote, error) {
 	return &vote, nil
 }
 
-func GetVoteWithResults(id string) (*Vote, error) {
-	vote := Vote {
-		Id:   id,
-		Name: "debug",
-	}
-	
-	return &vote, nil
-}
-
 func SaveResult(result *VoteResult) {
 	client := ConnectToRedis()
 	defer client.Close()
@@ -111,3 +102,23 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 		return true
 	}
 }
+
+//func GetVoteResults(vote Vote) {
+//	client := ConnectToRedis()
+
+//	results_keys, err := client.Keys("result:" + vote.Id).Result()
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	var results []VoteResult
+//	for _, value := range results_keys {
+//		fmt.Println(value)
+//		item, err := LoadUser(value)
+//		if err == nil {
+//			users = append(users, *item)
+//		}
+//	}
+//	client.Close()
+
+//	return users
+//}
