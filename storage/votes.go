@@ -66,3 +66,12 @@ func GetVote(id string) (*Vote, error) {
 	
 	return &vote, nil
 }
+
+func GetVoteWithResults(id string) (*Vote, error) {
+	vote := Vote {
+		Id:   id,
+		Name: "debug",
+	}
+	
+	return &vote, nil
+}
