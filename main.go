@@ -1,10 +1,11 @@
 package main
 
 import (
-    "fmt"
-    "github.com/FogCreek/mini"
-    "github.com/julienschmidt/httprouter"
-    "net/http"
+	"fmt"
+	"github.com/FogCreek/mini"
+	"github.com/julienschmidt/httprouter"
+	//	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"net/http"
 )
 
 func fatal(v interface{}) {
@@ -20,7 +21,7 @@ func chk(err error) {
 func params() string {
 	cfg, err := mini.LoadConfiguration(".pulseconfigrc")
 
-    chk(err)
+	chk(err)
 
 	info := fmt.Sprintf("db=%s",
 		cfg.String("db", "127.0.0.1"),
@@ -34,6 +35,8 @@ func main() {
 	router.POST("/votes", createVote)
 	router.GET("/votes/:id", getVote)
 	router.PUT("/votes/:id", doVote)
+	router.GET("/vote", emailVote)
 	router.POST("/user", registerUser)
 	http.ListenAndServe(":8080", router)
+
 }

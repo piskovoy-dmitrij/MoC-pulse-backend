@@ -52,8 +52,7 @@ type DoVote struct {
 	Value int    `json:"value"`
 }
 
-func authenticate(r *http.Request) (*auth.User, error) {
-	token := r.Header.Get("auth_token")
+func authenticate(token string) (*auth.User, error) {
 	if token == "123123" {
 		return &auth.User{
 			Id:     "debug",
@@ -81,7 +80,7 @@ func authenticate(r *http.Request) (*auth.User, error) {
 }
 
 func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r)
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -98,7 +97,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, error := authenticate(r)
+	_, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -128,7 +127,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	_, error := authenticate(r)
+	_, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -167,7 +166,7 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, error := authenticate(r)
+	_, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -213,6 +212,31 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Token: at.HMAC,
 	}
 	if json.NewEncoder(w).Encode(rec) != nil {
+		w.WriteHeader(500)
+	}
+}
+
+func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	token := r.FormValue("token")
+	_, error := authenticate(token)
+	if error != nil {
+		w.WriteHeader(400)
+		return
+	}
+	id := r.PostFormValue("vote")
+	vote := redis.Vote{
+		Id:   id,
+		Name: "debug",
+	}
+	value, _ := strconv.Atoi(r.PostFormValue("value"))
+	res := DoVoteStatus{
+		Vote: DoVote{
+			Name:  vote.Name,
+			Value: value,
+		},
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
 }
