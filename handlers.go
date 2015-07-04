@@ -96,9 +96,9 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Vote: *vote,
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "http://192.168.4.63:8080")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -111,8 +111,6 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	id := ps.ByName("id")
-	
-	//TODO add redis get vote method
 	vote := storage.Vote{
 		Id:   id,
 		Name: "debug",
@@ -131,9 +129,9 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		},
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "http://192.168.4.63:8080")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -173,9 +171,9 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Votes: votes[0:2],
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "http://192.168.4.63:8080")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -205,7 +203,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
@@ -218,7 +216,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	lastname := r.PostFormValue("last_name")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
-	token := r.PostFormValue("tiken")
+	token := r.PostFormValue("token")
 	if token != "BE7C411D475AEA4CF1D7B472D5BD1" {
 		w.WriteHeader(403)
 		return
@@ -250,7 +248,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	rec := RegisterStatus{
 		Token: at.HMAC,
 	}
@@ -295,7 +293,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Access-Control-Allow-Origin, auth_token")
 	if json.NewEncoder(w).Encode(res) != nil {
 		w.WriteHeader(500)
 	}
