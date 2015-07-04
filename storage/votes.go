@@ -103,22 +103,22 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 	}
 }
 
-func GetVoteResults(vote Vote) {
-	client := ConnectToRedis()
+//func GetVoteResults(vote Vote) {
+//	client := ConnectToRedis()
 
-	results_keys, err := client.Keys("result:" + vote.Id).Result()
-	if err != nil {
-		fmt.Println(err)
-	}
-	var results []VoteResult
-	for _, value := range results_keys {
-		fmt.Println(value)
-		item, err := LoadUser(value)
-		if err == nil {
-			users = append(users, *item)
-		}
-	}
-	client.Close()
+//	results_keys, err := client.Keys("result:" + vote.Id).Result()
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	var results []VoteResult
+//	for _, value := range results_keys {
+//		fmt.Println(value)
+//		item, err := LoadUser(value)
+//		if err == nil {
+//			users = append(users, *item)
+//		}
+//	}
+//	client.Close()
 
-	return users
-}
+//	return users
+//}
