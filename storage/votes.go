@@ -45,9 +45,11 @@ func GetVote(id string) (*Vote, error) {
 	if err == nil {
 		return nil, errors.New("Not found")
 	} else if err != nil {
-		log.Fatal("Failed to get vote by key "+id+": ", err)
+//		log.Panic("Failed to get vote by key "+id+": ", err)
 		return nil, errors.New("Not found")
 	}
+
+	fmt.Println("cont")
 
 	var vote Vote
 	jsonString, err := base64.StdEncoding.DecodeString(val)

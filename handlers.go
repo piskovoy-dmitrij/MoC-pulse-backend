@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-//	"fmt"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
@@ -87,7 +87,10 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	
 	vote, err := storage.GetVote(id)
 	
+	fmt.Println("out of get")
+	
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(400)
 		return
 	}
