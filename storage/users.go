@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,44 +17,36 @@ type UserInterface interface {
 
 func SaveUser(user auth.User) {
 	client := ConnectToRedis()
+	defer client.Close()
 
-	// retain readability with json
 	serialized, err := json.Marshal(user)
 
 	if err == nil {
-		fmt.Println("serialized data: ", string(serialized))
+//		fmt.Println("serialized data: ", base64.StdEncoding.EncodeToString(serialized))
 
-		err := client.Set("user:"+user.Id, string(serialized), 0).Err()
+		err := client.Set("user:"+user.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			log.Fatal("Failed to set user into redis: ", err)
 		}
 	}
-
-	client.Close()
 }
 
 func SaveAuthToken(at auth.AuthToken) {
 	client := ConnectToRedis()
 	defer client.Close()
 
-	// retain readability with json
 	serialized, err := json.Marshal(at)
 
 	if err == nil {
-		fmt.Println("serialized data: ", string(serialized))
+//		fmt.Println("serialized data: ", base64.StdEncoding.EncodeToString(serialized))
 
-		err := client.Set(at.HMAC, string(serialized), 0).Err()
+		err := client.Set(at.HMAC, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
 	}
 }
-
-//func GetAuthToken(token string) *auth.AuthToken {
-//	client := ConnectToRedis()
-
-//}
-
+	
 func GetAllUsers() []auth.User {
 	client := ConnectToRedis()
 
@@ -76,9 +69,9 @@ func GetAllUsers() []auth.User {
 
 func LoadUser(id string) (*auth.User, error) {
 	client := ConnectToRedis()
+	defer client.Close()
 
 	data, err := client.Get(id).Result()
-	client.Close()
 
 	if err != nil {
 		return nil, errors.New("Not exist")

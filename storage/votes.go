@@ -12,6 +12,9 @@ import (
 )
 
 func NewVote(name string, owner string) *Vote {
+	client := ConnectToRedis()
+	defer client.Close()
+	
 	id := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	vote := &Vote{
@@ -21,35 +24,26 @@ func NewVote(name string, owner string) *Vote {
 		Id:    id,
 	}
 
-	client := ConnectToRedis()
-
-	// retain readability with json
 	serialized, err := json.Marshal(vote)
 
 	if err == nil {
-		fmt.Println("serialized data: ", string(serialized))
-
-		err := client.Set("vote:"+id, string(serialized), 0).Err()
+		err := client.Set("vote:"+id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
 	}
-
-	client.Close()
 
 	return vote
 }
 
 func GetVote(id string) (*Vote, error) {
 	client := ConnectToRedis()
+	defer client.Close()
 
 	val, err := client.Get("vote:" + id).Result()
 
-	client.Close()
-
 	if err == nil {
 		return nil, errors.New("Not found")
-		fmt.Println("key " + id + " does not exists")
 	} else if err != nil {
 		log.Fatal("Failed to get vote by key "+id+": ", err)
 		return nil, errors.New("Not found")
@@ -65,6 +59,39 @@ func GetVote(id string) (*Vote, error) {
 	return &vote, nil
 }
 
+func GetAllVotesWithResult() []VoteWithResult {
+	client := ConnectToRedis()
+	defer client.Close()
+	
+	var votes []VoteWithResult
+	
+	votes = append(votes, VoteWithResult{
+			Name: "Vote 1",
+			Id:   "sgdsfgsdfgsdfg",
+			Result: Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		})
+	
+	votes = append(votes, VoteWithResult{
+			Name: "Vote 2",
+			Id:   "sgdsfgsdfgsdfg",
+			Result: Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		})
+	
+	return votes
+}
+
 func SaveResult(result *VoteResult) {
 	client := ConnectToRedis()
 	defer client.Close()
@@ -73,9 +100,7 @@ func SaveResult(result *VoteResult) {
 	serialized, err := json.Marshal(result)
 
 	if err == nil {
-		fmt.Println("serialized data: ", string(serialized))
-
-		err := client.Set("result:"+result.Id, string(serialized), 0).Err()
+		err := client.Set("result:" + result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			panic(err)
 		}
@@ -93,9 +118,9 @@ func NewResult(vote Vote, user auth.User, value int) *VoteResult {
 
 func LoadVoteResult(id string) (*VoteResult, error) {
 	client := ConnectToRedis()
+	defer client.Close()
 
 	data, err := client.Get(id).Result()
-	client.Close()
 
 	if err != nil {
 		return nil, errors.New("Not exist")
@@ -118,32 +143,44 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 	}
 }
 
-//func GetVoteResults(vote Vote) {
-//	client := ConnectToRedis()
+func GetVoteResultStatus(vote Vote) *VoteResultStatus {
+	client := ConnectToRedis()
+	defer client.Close()
 
-//	results_keys, err := client.Keys("result:" + vote.Id).Result()
-//	if err != nil {
-//		fmt.Println(err)
-//	}
+	results_keys, err := client.Keys("result:" + vote.Id).Result()
+	if err != nil {
+		fmt.Println(err)
+	}
 	
-//	var yellow int
-//	var red int
-//	var green int
+	var yellow int
+	var red int
+	var green int
 		
-//	for _, value := range results_keys {
-//		fmt.Println(value)
-//		item, err := LoadVoteResult(value)
-//		if err == nil {
-//			if(item.Value == 0) {
-//				red = red + 1
-//			} else if(item.Value == 1) {
-//				yellow = yellow + 1
-//			} else {
-//				green = green + 1
-//			}
-//		}
-//	}
-//	client.Close()
+	for _, value := range results_keys {
+		fmt.Println(value)
+		item, err := LoadVoteResult(value)
+		if err == nil {
+			if(item.value == 0) {
+				red = red + 1
+			} else if(item.value == 1) {
+				yellow = yellow + 1
+			} else {
+				green = green + 1
+			}
+		}
+	}
 
-//	return 
-//}
+	return &VoteResultStatus{
+		Vote: VoteWithResult{
+			Name: vote.Name,
+			Id:   vote.Id,
+			Result: Result{
+				Yellow:    yellow,
+				Green:     green,
+				Red:       red,
+				AllUsers:  20,
+				VoteUsers: yellow + green + red,
+			},
+		},
+	}
+}

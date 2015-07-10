@@ -6,7 +6,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
-	//	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"net/http"
 )
 
