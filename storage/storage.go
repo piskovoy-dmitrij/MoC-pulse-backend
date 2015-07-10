@@ -48,7 +48,6 @@ type VotesStatus struct {
 	Votes []VoteWithResult `json:"votes"`
 }
 
-
 func ConnectToRedis() *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",

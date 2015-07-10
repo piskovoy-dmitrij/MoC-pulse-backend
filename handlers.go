@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-//	"fmt"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
@@ -85,15 +85,24 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	id := ps.ByName("id")
 	
-	vote, err := storage.GetVote(id)
-	
-	if err != nil {
-		w.WriteHeader(400)
-		return
+	//TODO add redis get vote method
+	vote := storage.Vote{
+		Id:   id,
+		Name: "debug",
 	}
-	
-	res := storage.GetVoteResultStatus(*vote)
-	
+	res := storage.VoteResultStatus{
+		Vote: storage.VoteWithResult{
+			Name: vote.Name,
+			Id:   vote.Id,
+			Result: storage.Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -109,8 +118,30 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(400)
 		return
 	}
-	
-	votes := storage.GetAllVotesWithResult()
+	votes := [...]storage.VoteWithResult{
+		storage.VoteWithResult{
+			Name: "Vote 1",
+			Id:   "sgdsfgsdfgsdfg",
+			Result: storage.Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+		storage.VoteWithResult{
+			Name: "Vote 2",
+			Id:   "sgdssdfgggsdfgsdfg",
+			Result: storage.Result{
+				Yellow:    10,
+				Green:     5,
+				Red:       3,
+				AllUsers:  20,
+				VoteUsers: 18,
+			},
+		},
+	}
 	res := storage.VotesStatus{
 		Votes: votes[0:2],
 	}
@@ -181,6 +212,8 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	at := auth.NewAuthToken(*user, time.Now(), secret)
+	fmt.Println("Saving to Redis")
+
 	storage.SaveUser(*user)
 	storage.SaveAuthToken(*at)
 
