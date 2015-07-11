@@ -10,6 +10,7 @@ import (
 type Vote struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
+	Voted bool   `json:"voted"`
 	owner string
 	date  int64
 }
@@ -46,6 +47,15 @@ type Result struct {
 
 type VotesStatus struct {
 	Votes []VoteWithResult `json:"votes"`
+}
+
+type DoVoteStatus struct {
+	Vote DoVote `json:"vote"`
+}
+
+type DoVote struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
 }
 
 func ConnectToRedis() *redis.Client {

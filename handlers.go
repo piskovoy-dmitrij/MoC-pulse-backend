@@ -17,15 +17,6 @@ type RegisterStatus struct {
 	Token string `json: token`
 }
 
-type DoVoteStatus struct {
-	Vote DoVote `json:"vote"`
-}
-
-type DoVote struct {
-	Name  string `json:"name"`
-	Value int    `json:"value"`
-}
-
 func storageConnect() {
 	storage.ConnectToRedis()
 }
@@ -85,24 +76,15 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 	id := ps.ByName("id")
 	
-	//TODO add redis get vote method
-	vote := storage.Vote{
-		Id:   id,
-		Name: "debug",
-	}
-	res := storage.VoteResultStatus{
-		Vote: storage.VoteWithResult{
-			Name: vote.Name,
-			Id:   vote.Id,
-			Result: storage.Result{
-				Yellow:    10,
-				Green:     5,
-				Red:       3,
-				AllUsers:  20,
-				VoteUsers: 18,
-			},
-		},
-	}
+	vote, err := storage.GetVote(id)
+
+    if err != nil {
+        w.WriteHeader(400)
+        return
+    }
+
+    res := storage.GetVoteResultStatus(*vote)
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -118,33 +100,10 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(400)
 		return
 	}
-	votes := [...]storage.VoteWithResult{
-		storage.VoteWithResult{
-			Name: "Vote 1",
-			Id:   "sgdsfgsdfgsdfg",
-			Result: storage.Result{
-				Yellow:    10,
-				Green:     5,
-				Red:       3,
-				AllUsers:  20,
-				VoteUsers: 18,
-			},
-		},
-		storage.VoteWithResult{
-			Name: "Vote 2",
-			Id:   "sgdssdfgggsdfgsdfg",
-			Result: storage.Result{
-				Yellow:    10,
-				Green:     5,
-				Red:       3,
-				AllUsers:  20,
-				VoteUsers: 18,
-			},
-		},
-	}
-	res := storage.VotesStatus{
-		Votes: votes[0:2],
-	}
+	votes := storage.GetAllVotesWithResult()
+    res := storage.VotesStatus{
+        Votes: votes,
+    }
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -155,23 +114,29 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, error := authenticate(r.Header.Get("auth_token"))
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
 	id := ps.ByName("id")
-	vote := storage.Vote{
-		Id:   id,
-		Name: "debug",
-	}
+	vote, err := storage.GetVote(id)
+
+    if err != nil {
+        w.WriteHeader(400)
+        return
+    }
+
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	res := DoVoteStatus{
-		Vote: DoVote{
-			Name:  vote.Name,
-			Value: value,
-		},
-	}
+	
+	res := storage.VoteProccessing(*vote, *user, value)
+	
+//	res := DoVoteStatus{
+//		Vote: DoVote{
+//			Name:  vote.Name,
+//			Value: value,
+//		},
+//	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -253,8 +218,8 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		Name: "debug",
 	}
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	res := DoVoteStatus{
-		Vote: DoVote{
+	res := storage.DoVoteStatus{
+		Vote: storage.DoVote{
 			Name:  vote.Name,
 			Value: value,
 		},

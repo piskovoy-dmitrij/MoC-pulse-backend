@@ -49,6 +49,7 @@ func SaveAuthToken(at auth.AuthToken) {
 	
 func GetAllUsers() []auth.User {
 	client := ConnectToRedis()
+    defer client.Close()
 
 	users_keys, err := client.Keys("user:*").Result()
 	if err != nil {
@@ -62,7 +63,6 @@ func GetAllUsers() []auth.User {
 			users = append(users, *item)
 		}
 	}
-	client.Close()
 
 	return users
 }
