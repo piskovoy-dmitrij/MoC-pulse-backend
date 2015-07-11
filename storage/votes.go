@@ -18,8 +18,8 @@ func NewVote(name string, owner string) *Vote {
 
 	vote := &Vote{
 		Name:  name,
-		date:  time.Now().UnixNano(),
-		owner: owner,
+		Date:  time.Now().UnixNano(),
+		Owner: owner,
 		Id:    id,
 		Voted: false,
 	}

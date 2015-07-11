@@ -3,13 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"net/http"
 	"strconv"
 	"time"
 //	"strings"
+	"github.com/julienschmidt/httprouter"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -20,6 +20,10 @@ type RegisterStatus struct {
 
 func storageConnect() {
 	storage.ConnectToRedis()
+}
+
+type ParamSt struct {
+	Name string `json: name`
 }
 
 func authenticate(token string) (*auth.User, error) {
@@ -53,8 +57,15 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		w.WriteHeader(400)
 		return
 	}
-	name := r.PostFormValue("name")
-	vote := storage.NewVote(name, user.Id)
+	
+	var params ParamSt
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		fmt.Println(err)
+	}
+		
+	voteParam := r.PostFormValue("vote")
+	vote := storage.NewVote(params.Name, user.Id)
 	users, _ := storage.GetUsers()
 	notificationSender.Send(users, *vote)
 	res := storage.VoteStatus{
@@ -76,15 +87,15 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	id := ps.ByName("id")
-	
+
 	vote, err := storage.GetVote(id)
 
-    if err != nil {
-        w.WriteHeader(400)
-        return
-    }
+	if err != nil {
+		w.WriteHeader(400)
+		return
+	}
 
-    res := storage.GetVoteResultStatus(*vote)
+	res := storage.GetVoteResultStatus(*vote)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -107,9 +118,9 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	votes := storage.GetAllVotesWithResult()
-    res := storage.VotesStatus{
-        Votes: votes,
-    }
+	res := storage.VotesStatus{
+		Votes: votes,
+	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -128,10 +139,10 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id := ps.ByName("id")
 	vote, err := storage.GetVote(id)
 
-    if err != nil {
-        w.WriteHeader(400)
-        return
-    }
+	if err != nil {
+		w.WriteHeader(400)
+		return
+	}
 
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
 	res := storage.VoteProccessing(*vote, *user, value)
@@ -194,12 +205,12 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r.Header.Get("auth_token"))
+	/*user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
-	}
-	notificationSender.Send([]auth.User{*user}, storage.Vote{Id: "5", Name: "Hello world"})
+	}*/
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "5414b78671e511377ece76d5e078a48db7d64fb9df9756aa3cc61f1805928c9a"}}, storage.Vote{Id: "5", Name: "Hello world"})
 
 	w.WriteHeader(200)
 }
