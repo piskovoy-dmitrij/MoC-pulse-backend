@@ -1,10 +1,12 @@
 package notification
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 
-	"github.com/Mistobaan/go-apns"
+	//"github.com/Mistobaan/go-apns"
+	"github.com/anachronistic/apns"
+
 	"github.com/alexjlockwood/gcm"
 	"github.com/mostafah/mandrill"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
@@ -107,10 +109,27 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 
 	if len(devices.AppleIds) > 0 {
 		fmt.Printf("Notification sender debug: Server: %s, Cert: %s, Key: %s\n", this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
-		apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
-		if err != nil {
-			fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
-		} else {
+		//apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
+		//if err != nil {
+		//	fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
+		//} else {
+		payload := apns.NewPayload()
+		payload.Alert = "Hello, world!"
+		payload.Badge = 42
+		payload.Sound = "bingbong.aiff"
+
+		pn := apns.NewPushNotification()
+		pn.DeviceToken = "5414b78671e511377ece76d5e078a48db7d64fb9df9756aa3cc61f1805928c9a"
+		pn.AddPayload(payload)
+
+		client := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
+		resp := client.Send(pn)
+
+		alert, _ := pn.PayloadString()
+		fmt.Println("  Alert:", alert)
+		fmt.Println("Success:", resp.Success)
+		fmt.Println("  Error:", resp.Error)
+		/*
 			payload := &ApplePayload{}
 			payload.Aps.Alert = vote.Name
 			payload.Aps.Title = "MOC Pulse"
@@ -124,12 +143,13 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			fmt.Printf("Notification sender debug: %v\n", string(bytes))
 			for i := range devices.AppleIds {
 				fmt.Printf("Notification sender debug: Trying to send Apple device notifications to %v\n", devices.AppleIds[i])
-				err = apn.SendPayloadString(devices.AppleIds[i], bytes, 0)
+				err = apn.SendPayloadString(devices.AppleIds[i], bytes, 5)
 				if err != nil {
 					fmt.Printf("Notification sender !!!ERROR: Sending notification to Apple device failed: %s\n", err.Error())
 				}
 			}
-		}
+		*/
+		//}
 	}
 
 	if len(devices.OtherUsers) > 0 {
