@@ -3,6 +3,7 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/Mistobaan/go-apns"
 	"github.com/alexjlockwood/gcm"
 	"github.com/mostafah/mandrill"
@@ -12,8 +13,8 @@ import (
 
 type Sender struct {
 	GoogleApiKey      string
-	AppleCertFilename string
-	AppleKeyFilename  string
+	AppleCertPath     string
+	AppleKeyPath      string
 	AppleServer       string
 	MandrillKey       string
 	MandrillTemplate  string
@@ -52,8 +53,8 @@ const (
 )
 
 func NewSender(GoogleApiKey string,
-	AppleCertFilename string,
-	AppleKeyFilename string,
+	AppleCertPath string,
+	AppleKeyPath string,
 	AppleServer string,
 	MandrillKey string,
 	MandrillTemplate string,
@@ -63,8 +64,8 @@ func NewSender(GoogleApiKey string,
 
 	return &Sender{
 		GoogleApiKey,
-		AppleCertFilename,
-		AppleKeyFilename,
+		AppleCertPath,
+		AppleKeyPath,
 		AppleServer,
 		MandrillKey,
 		MandrillTemplate,
@@ -105,7 +106,8 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	}
 
 	if len(devices.AppleIds) > 0 {
-		apn, err := apns.NewClient(this.AppleServer, this.AppleCertFilename, this.AppleKeyFilename)
+		fmt.Printf("Notification sender debug: Server: %s, Cert: %s, Key: %s\n", this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
+		apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
 		if err != nil {
 			fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
 		} else {
@@ -119,12 +121,12 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			actions.Identifier = "voteButtonAction"
 			payload.SimulatorActions = append(payload.SimulatorActions, *actions)
 			bytes, _ := json.Marshal(payload)
-			fmt.Printf("Notification sender debug: %v", string(bytes))
+			fmt.Printf("Notification sender debug: %v\n", string(bytes))
 			for i := range devices.AppleIds {
-				fmt.Printf("Notification sender debug: Trying to send Apple device notifications to %v", devices.AppleIds[i])
-				err = apn.SendPayloadString(devices.AppleIds[i], bytes, 5)
+				fmt.Printf("Notification sender debug: Trying to send Apple device notifications to %v\n", devices.AppleIds[i])
+				err = apn.SendPayloadString(devices.AppleIds[i], bytes, 0)
 				if err != nil {
-					fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
+					fmt.Printf("Notification sender !!!ERROR: Sending notification to Apple device failed: %s\n", err.Error())
 				}
 			}
 		}
@@ -141,7 +143,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			data["VOTE"] = vote.Id
 			for i := range devices.OtherUsers {
 				data["TOKEN"] = devices.OtherUsers[i].Id
-				fmt.Printf("Notification sender debug: Trying to send Email notifications to %v", devices.OtherUsers[i].Email)
+				fmt.Printf("Notification sender debug: Trying to send Email notifications to %v\n", devices.OtherUsers[i].Email)
 				msg := mandrill.NewMessageTo(devices.OtherUsers[i].Email, devices.OtherUsers[i].FirstName+devices.OtherUsers[i].LastName)
 				msg.Subject = this.MandrillSubject
 				msg.FromEmail = this.MandrillFromEmail

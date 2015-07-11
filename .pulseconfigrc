@@ -1,1 +1,11 @@
 db = 'localhost'
+
+GoogleApiKey = ''
+AppleCertPath = 'C:\\Users\\Idiachkova\\Go\\src\\github.com\\piskovoy-dmitrij\\MoC-pulse-backend\\cert.pem'
+AppleKeyPath = 'C:\\Users\\Idiachkova\\Go\\src\\github.com\\piskovoy-dmitrij\\MoC-pulse-backend\\key-noenc.pem'
+AppleServer = 'gateway.sandbox.push.apple.com:2195'
+MandrillKey = 'FIKIPKBtZGZpWBpeUVPVBA'
+MandrillTemplate = 'vote'
+MandrillFromEmail = 'pulse@masterofcode.com'
+MandrillFromName = 'MoC Pulse'
+MandrillSubject = 'New Voting'

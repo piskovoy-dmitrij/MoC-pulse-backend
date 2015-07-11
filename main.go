@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/FogCreek/mini"
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 	"net/http"
+
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 )
 
 var notificationSender *notification.Sender
+
+var cfg *mini.Config
 
 func fatal(v interface{}) {
 	fmt.Println(v)
@@ -21,28 +25,24 @@ func chk(err error) {
 	}
 }
 
-func params() string {
-	cfg, err := mini.LoadConfiguration(".pulseconfigrc")
+func main() {
 
+	var err error
+
+	cfg, err = mini.LoadConfiguration(".pulseconfigrc")
 	chk(err)
 
-	info := fmt.Sprintf("db=%s",
-		cfg.String("db", "127.0.0.1"),
-	)
-	return info
-}
-
-func main() {
 	notificationSender = notification.NewSender(
-		"",
-		"",
-		"",
-		"",
-		"FIKIPKBtZGZpWBpeUVPVBA",
-		"vote",
-		"pulse@masterofcode.com",
-		"MoC Pulse",
-		"Test Subject")
+		cfg.String("GoogleApiKey", ""),
+		cfg.String("AppleCertPath", "pushcert.pem"),
+		cfg.String("AppleKeyPath", "pushkey.pem"),
+		cfg.String("AppleServer", "gateway.push.apple.com:2195"),
+		cfg.String("MandrillKey", ""),
+		cfg.String("MandrillTemplate", "vote"),
+		cfg.String("MandrillFromEmail", "pulse@masterofcode.com"),
+		cfg.String("MandrillFromName", "MoC Pulse"),
+		cfg.String("MandrillSubject", "New Voting"))
+
 	router := httprouter.New()
 	router.GET("/votes", getVotes)
 	router.POST("/votes", createVote)
@@ -51,6 +51,7 @@ func main() {
 	router.GET("/vote", emailVote)
 	router.POST("/user", registerUser)
 	router.POST("/test_notification_sending", testNotificationSending)
+
 	http.ListenAndServe(":8080", router)
 
 }

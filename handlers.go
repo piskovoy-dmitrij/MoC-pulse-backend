@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -84,7 +85,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 	id := ps.ByName("id")
-	
+
 	//TODO add redis get vote method
 	vote := storage.Vote{
 		Id:   id,
@@ -230,12 +231,12 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	user, error := authenticate(r.Header.Get("auth_token"))
+	/*user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
-	}
-	notificationSender.Send([]auth.User{*user}, storage.Vote{Id: "5", Name: "Hello world"})
+	}*/
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "5414b78671e511377ece76d5e078a48db7d64fb9df9756aa3cc61f1805928c9a"}}, storage.Vote{Id: "5", Name: "Hello world"})
 
 	w.WriteHeader(200)
 }
