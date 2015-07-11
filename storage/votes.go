@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-	"log"
 	"strconv"
 	"time"
 )
@@ -22,6 +21,7 @@ func NewVote(name string, owner string) *Vote {
 		date:  time.Now().UnixNano(),
 		owner: owner,
 		Id:    id,
+		Voted: false,
 	}
 
 	serialized, err := json.Marshal(vote)
@@ -42,10 +42,9 @@ func GetVote(id string) (*Vote, error) {
 
 	val, err := client.Get("vote:" + id).Result()
 
-	if err == nil {
-		return nil, errors.New("Not found")
-	} else if err != nil {
-		log.Fatal("Failed to get vote by key "+id+": ", err)
+	if err != nil {
+		fmt.Println("Vote not found in redis")
+
 		return nil, errors.New("Not found")
 	}
 
@@ -53,7 +52,9 @@ func GetVote(id string) (*Vote, error) {
 	jsonString, err := base64.StdEncoding.DecodeString(val)
 	err = json.Unmarshal(jsonString, &vote)
 	if err != nil {
-		log.Fatal("Failed to decode Vote: ", err)
+		fmt.Println("Failed to decode Vote")
+
+		return nil, err
 	}	
 	
 	return &vote, nil
@@ -62,34 +63,67 @@ func GetVote(id string) (*Vote, error) {
 func GetAllVotesWithResult() []VoteWithResult {
 	client := ConnectToRedis()
 	defer client.Close()
-	
+
+	votes_keys, err := client.Keys("vote:*").Result()
+	if err != nil {
+	    fmt.Println(err)
+	}
+
 	var votes []VoteWithResult
-	
-	votes = append(votes, VoteWithResult{
-			Name: "Vote 1",
-			Id:   "sgdsfgsdfgsdfg",
-			Result: Result{
-				Yellow:    10,
-				Green:     5,
-				Red:       3,
-				AllUsers:  20,
-				VoteUsers: 18,
-			},
-		})
-	
-	votes = append(votes, VoteWithResult{
-			Name: "Vote 2",
-			Id:   "sgdsfgsdfgsdfg",
-			Result: Result{
-				Yellow:    10,
-				Green:     5,
-				Red:       3,
-				AllUsers:  20,
-				VoteUsers: 18,
-			},
-		})
-	
+
+	for _, value := range votes_keys {
+	    fmt.Println(value)
+		vote,_ := GetVote(value)
+	    item := GetVoteResultStatus(*vote)
+	    votes = append(votes, item.Vote)
+	}
+
 	return votes
+
+
+	
+
+
+
+//	votes = append(votes, VoteWithResult{
+//			Name: "Vote 1",
+//			Id:   "sgdsfgsdfgsdfg",
+//			Result: Result{
+//				Yellow:    10,
+//				Green:     5,
+//				Red:       3,
+//				AllUsers:  20,
+//				VoteUsers: 18,
+//			},
+//		})
+	
+//	votes = append(votes, VoteWithResult{
+//			Name: "Vote 2",
+//			Id:   "sgdsfgsdfgsdfg",
+//			Result: Result{
+//				Yellow:    10,
+//				Green:     5,
+//				Red:       3,
+//				AllUsers:  20,
+//				VoteUsers: 18,
+//			},
+//		})
+	
+//	return votes
+}
+
+func VoteProccessing(vote Vote, user auth.User, value int) *DoVoteStatus {
+	voteResult := NewResult(vote, user, value)
+	
+	SaveResult(voteResult)
+	
+	return &DoVoteStatus{
+		Vote: DoVote{
+			Name:  vote.Name,
+			Value: value,
+		},
+	}
+	
 }
 
 func SaveResult(result *VoteResult) {
