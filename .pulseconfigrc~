@@ -1,8 +1,8 @@
 db = 'localhost'
 
 GoogleApiKey = ''
-AppleCertPath = '/var/www/html/Go/src/github.com/piskovoy-dmitrij/MoC-pulse-backend/cert.pem'
-AppleKeyPath = '/var/www/html/Go/src/github.com/piskovoy-dmitrij/MoC-pulse-backend/key-noenc.pem'
+AppleCertPath = '/var/www/html/Go/src/github.com/piskovoy-dmitrij/MoC-pulse-backend/devpushcert.pem'
+AppleKeyPath = '/var/www/html/Go/src/github.com/piskovoy-dmitrij/MoC-pulse-backend/devpushkey.pem'
 AppleServer = 'gateway.sandbox.push.apple.com:2195'
 MandrillKey = 'FIKIPKBtZGZpWBpeUVPVBA'
 MandrillTemplate = 'vote'

@@ -11,8 +11,8 @@ type Vote struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
 	Voted bool   `json:"voted"`
-	owner string
-	date  int64
+	Owner string `json:"owner"`
+	Date  int64  `json:"date"`
 }
 
 type VoteResult struct {
