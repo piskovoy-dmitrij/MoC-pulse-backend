@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+//	"strings"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -95,6 +96,11 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 }
 
 func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	
+//	auth := r.Header.Get("auth_token")
+//	str := strings.SplitN(auth,"\/",1)
+//	fmt.Println(str)
+	
 	_, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
@@ -128,15 +134,8 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
     }
 
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	
 	res := storage.VoteProccessing(*vote, *user, value)
-	
-//	res := DoVoteStatus{
-//		Vote: DoVote{
-//			Name:  vote.Name,
-//			Value: value,
-//		},
-//	}
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")

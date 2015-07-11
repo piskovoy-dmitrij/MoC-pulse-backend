@@ -79,37 +79,6 @@ func GetAllVotesWithResult() []VoteWithResult {
 	}
 
 	return votes
-
-
-	
-
-
-
-//	votes = append(votes, VoteWithResult{
-//			Name: "Vote 1",
-//			Id:   "sgdsfgsdfgsdfg",
-//			Result: Result{
-//				Yellow:    10,
-//				Green:     5,
-//				Red:       3,
-//				AllUsers:  20,
-//				VoteUsers: 18,
-//			},
-//		})
-	
-//	votes = append(votes, VoteWithResult{
-//			Name: "Vote 2",
-//			Id:   "sgdsfgsdfgsdfg",
-//			Result: Result{
-//				Yellow:    10,
-//				Green:     5,
-//				Red:       3,
-//				AllUsers:  20,
-//				VoteUsers: 18,
-//			},
-//		})
-	
-//	return votes
 }
 
 func VoteProccessing(vote Vote, user auth.User, value int) *DoVoteStatus {
@@ -123,7 +92,6 @@ func VoteProccessing(vote Vote, user auth.User, value int) *DoVoteStatus {
 			Value: value,
 		},
 	}
-	
 }
 
 func SaveResult(result *VoteResult) {
