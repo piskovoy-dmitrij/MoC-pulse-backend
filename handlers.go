@@ -51,7 +51,7 @@ func authenticate(token string) (*auth.User, error) {
 	}
 }
 
-func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {	
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
@@ -64,7 +64,6 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Println(err)
 	}
 		
-	voteParam := r.PostFormValue("vote")
 	vote := storage.NewVote(params.Name, user.Id)
 	users, _ := storage.GetUsers()
 	notificationSender.Send(users, *vote)
