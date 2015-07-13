@@ -34,6 +34,9 @@ type VoteResultStatus struct {
 type VoteWithResult struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
+	Owner  string `json:"owner"`
+	Date   int64  `json:"date"`
+	Voted  bool   `json:"voted"`
 	Result Result `json:"result"`
 }
 

@@ -22,8 +22,6 @@ func SaveUser(user auth.User) {
 	serialized, err := json.Marshal(user)
 
 	if err == nil {
-//		fmt.Println("serialized data: ", base64.StdEncoding.EncodeToString(serialized))
-
 		err := client.Set("user:"+user.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			log.Fatal("Failed to set user into redis: ", err)
@@ -38,8 +36,6 @@ func SaveAuthToken(at auth.AuthToken) {
 	serialized, err := json.Marshal(at)
 
 	if err == nil {
-//		fmt.Println("serialized data: ", base64.StdEncoding.EncodeToString(serialized))
-
 		err := client.Set(at.HMAC, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
 			panic(err)

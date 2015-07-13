@@ -18,7 +18,7 @@ func NewVote(name string, owner string) *Vote {
 
 	vote := &Vote{
 		Name:  name,
-		Date:  time.Now().UnixNano(),
+		Date:  time.Now().Unix(),
 		Owner: owner,
 		Id:    id,
 		Voted: false,
@@ -37,14 +37,17 @@ func NewVote(name string, owner string) *Vote {
 }
 
 func GetVote(id string) (*Vote, error) {
+	return LoadVote("vote:" + id)
+}
+
+func LoadVote(id string) (*Vote, error) {
 	client := ConnectToRedis()
 	defer client.Close()
 
-	val, err := client.Get("vote:" + id).Result()
+	val, err := client.Get(id).Result()
 
 	if err != nil {
 		fmt.Println("Vote not found in redis")
-
 		return nil, errors.New("Not found")
 	}
 
@@ -53,14 +56,13 @@ func GetVote(id string) (*Vote, error) {
 	err = json.Unmarshal(jsonString, &vote)
 	if err != nil {
 		fmt.Println("Failed to decode Vote")
-
 		return nil, err
-	}	
-	
+	}
+
 	return &vote, nil
 }
 
-func GetAllVotesWithResult() []VoteWithResult {
+func GetAllVotesWithResult(user auth.User) []VoteWithResult {
 	client := ConnectToRedis()
 	defer client.Close()
 
@@ -71,17 +73,21 @@ func GetAllVotesWithResult() []VoteWithResult {
 
 	var votes []VoteWithResult
 
-	for _, value := range votes_keys {
-	    fmt.Println(value)
-		vote,_ := GetVote(value)
-	    item := GetVoteResultStatus(*vote)
-	    votes = append(votes, item.Vote)
+	for key, value := range votes_keys {
+		fmt.Println(key)
+		fmt.Println("vote value: " + value)
+		vote, error := LoadVote(value)
+
+		if error == nil {
+			item := GetVoteResultStatus(*vote, user)
+			votes = append(votes, item.Vote)
+		}
 	}
 
 	return votes
 }
 
-func VoteProccessing(vote Vote, user auth.User, value int) *DoVoteStatus {
+func VoteProcessing(vote Vote, user auth.User, value int) *DoVoteStatus {
 	voteResult := NewResult(vote, user, value)
 	
 	SaveResult(voteResult)
@@ -145,7 +151,7 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 	}
 }
 
-func GetVoteResultStatus(vote Vote) *VoteResultStatus {
+func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 	client := ConnectToRedis()
 	defer client.Close()
 
@@ -176,6 +182,9 @@ func GetVoteResultStatus(vote Vote) *VoteResultStatus {
 		Vote: VoteWithResult{
 			Name: vote.Name,
 			Id:   vote.Id,
+			Owner: vote.Owner,
+			Date: vote.Date,
+			Voted: isVotedByUser(vote, user),
 			Result: Result{
 				Yellow:    yellow,
 				Green:     green,

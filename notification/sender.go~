@@ -119,7 +119,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 		payload.Sound = "bingbong.aiff"
 
 		pn := apns.NewPushNotification()
-		pn.DeviceToken = "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"
+		pn.DeviceToken = "5414b78671e511377ece76d5e078a48db7d64fb9df9756aa3cc61f1805928c9a"
 		pn.AddPayload(payload)
 
 		client := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)

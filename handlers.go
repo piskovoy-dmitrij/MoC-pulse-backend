@@ -23,7 +23,11 @@ func storageConnect() {
 }
 
 type ParamSt struct {
-	Name string `json: name`
+	Name  string `json: name`
+}
+
+type DoVotePrm struct {
+	Value int `json: value`
 }
 
 func authenticate(token string) (*auth.User, error) {
@@ -67,9 +71,9 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	vote := storage.NewVote(params.Name, user.Id)
 	users, _ := storage.GetUsers()
 	notificationSender.Send(users, *vote)
-	res := storage.VoteStatus{
-		Vote: *vote,
-	}
+
+	res := storage.GetVoteResultStatus(*vote, *user)
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -80,7 +84,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	_, error := authenticate(r.Header.Get("auth_token"))
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
@@ -94,7 +98,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	res := storage.GetVoteResultStatus(*vote)
+	res := storage.GetVoteResultStatus(*vote, *user)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -111,12 +115,12 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 //	str := strings.SplitN(auth,"\/",1)
 //	fmt.Println(str)
 	
-	_, error := authenticate(r.Header.Get("auth_token"))
+	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
-	votes := storage.GetAllVotesWithResult()
+	votes := storage.GetAllVotesWithResult(*user)
 	res := storage.VotesStatus{
 		Votes: votes,
 	}
@@ -139,12 +143,28 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	vote, err := storage.GetVote(id)
 
 	if err != nil {
+		fmt.Println(err)
 		w.WriteHeader(400)
 		return
 	}
 
-	value, _ := strconv.Atoi(r.PostFormValue("value"))
-	res := storage.VoteProccessing(*vote, *user, value)
+	var params DoVotePrm
+	errDec := json.NewDecoder(r.Body).Decode(&params)
+
+	fmt.Println("params")
+	fmt.Println(params)
+
+
+	fmt.Println("ps")
+	fmt.Println(ps)
+
+	if errDec != nil {
+		fmt.Println(errDec)
+		w.WriteHeader(400)
+		return
+	}
+
+	res := storage.VoteProcessing(*vote, *user, params.Value)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
