@@ -229,7 +229,7 @@ func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httproute
 		w.WriteHeader(400)
 		return
 	}*/
-	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "5414b78671e511377ece76d5e078a48db7d64fb9df9756aa3cc61f1805928c9a"}}, storage.Vote{Id: "5", Name: "Hello world"})
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
 
 	w.WriteHeader(200)
 }
