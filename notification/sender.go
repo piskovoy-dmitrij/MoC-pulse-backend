@@ -1,12 +1,10 @@
 package notification
 
 import (
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
 
-	//"github.com/Mistobaan/go-apns"
-	"github.com/anachronistic/apns"
-
+	"github.com/Mistobaan/go-apns"
 	"github.com/alexjlockwood/gcm"
 	"github.com/mostafah/mandrill"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
@@ -32,10 +30,10 @@ type Devices struct {
 }
 
 type Aps struct {
-	Alert    string `json:"alert"`
-	Title    string `json:"title"`
-	Category string `json:"category"`
-	Id       string `json:"id"`
+	Alert    string       `json:"alert"`
+	Title    string       `json:"title"`
+	Category string       `json:"category"`
+	Vote     storage.Vote `json:"vote"`
 }
 
 type SimulatorAction struct {
@@ -109,32 +107,15 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 
 	if len(devices.AppleIds) > 0 {
 		fmt.Printf("Notification sender debug: Server: %s, Cert: %s, Key: %s\n", this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
-		//apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
-		//if err != nil {
-		//	fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
-		//} else {
-		payload := apns.NewPayload()
-		payload.Alert = "Hello, world!"
-		payload.Badge = 42
-		payload.Sound = "bingbong.aiff"
-
-		pn := apns.NewPushNotification()
-		pn.DeviceToken = "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"
-		pn.AddPayload(payload)
-
-		client := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
-		resp := client.Send(pn)
-
-		alert, _ := pn.PayloadString()
-		fmt.Println("  Alert:", alert)
-		fmt.Println("Success:", resp.Success)
-		fmt.Println("  Error:", resp.Error)
-		/*
+		apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
+		if err != nil {
+			fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
+		} else {
 			payload := &ApplePayload{}
 			payload.Aps.Alert = vote.Name
 			payload.Aps.Title = "MOC Pulse"
 			payload.Aps.Category = "watchkit"
-			payload.Aps.Id = vote.Id
+			payload.Aps.Vote = vote
 			actions := &SimulatorAction{}
 			actions.Title = "Vote"
 			actions.Identifier = "voteButtonAction"
@@ -148,8 +129,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 					fmt.Printf("Notification sender !!!ERROR: Sending notification to Apple device failed: %s\n", err.Error())
 				}
 			}
-		*/
-		//}
+		}
 	}
 
 	if len(devices.OtherUsers) > 0 {
