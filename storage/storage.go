@@ -16,11 +16,11 @@ type Vote struct {
 }
 
 type VoteResult struct {
-	Id    string
-	value int
-	vote  string
-	date  int64
-	user  string
+	Id    string `json:"Id"`
+	Value int    `json:"Value"`
+	Vote  string `json:"Vote"`
+	Date  int64  `json:"Date"`
+	user  string `json:"user"`
 }
 
 type VoteStatus struct {

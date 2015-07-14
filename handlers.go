@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-//	"strings"
 	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
@@ -24,6 +23,7 @@ func storageConnect() {
 
 type ParamSt struct {
 	Name  string `json: name`
+	Type  string `json: type`
 }
 
 type DoVotePrm struct {
@@ -67,7 +67,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err != nil {
 		fmt.Println(err)
 	}
-		
+	
 	vote := storage.NewVote(params.Name, user.Id)
 	users, _ := storage.GetUsers()
 	notificationSender.Send(users, *vote)
@@ -109,12 +109,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
-func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	
-//	auth := r.Header.Get("auth_token")
-//	str := strings.SplitN(auth,"\/",1)
-//	fmt.Println(str)
-	
+func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {	
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
@@ -151,20 +146,15 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	var params DoVotePrm
 	errDec := json.NewDecoder(r.Body).Decode(&params)
 
-	fmt.Println("params")
-	fmt.Println(params)
-
-
-	fmt.Println("ps")
-	fmt.Println(ps)
-
 	if errDec != nil {
 		fmt.Println(errDec)
 		w.WriteHeader(400)
 		return
 	}
 
-	res := storage.VoteProcessing(*vote, *user, params.Value)
+	storage.VoteProcessing(*vote, *user, params.Value)
+	
+	res := storage.GetVoteResultStatus(*vote, *user)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -242,10 +232,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	id := r.PostFormValue("vote")
-	vote := storage.Vote{
-		Id:   id,
-		Name: "debug",
-	}
+	vote, _ := storage.GetVote(id)
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
 	res := storage.DoVoteStatus{
 		Vote: storage.DoVote{

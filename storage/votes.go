@@ -73,11 +73,8 @@ func GetAllVotesWithResult(user auth.User) []VoteWithResult {
 
 	var votes []VoteWithResult
 
-	for key, value := range votes_keys {
-		fmt.Println(key)
-		fmt.Println("vote value: " + value)
+	for _, value := range votes_keys {		
 		vote, error := LoadVote(value)
-
 		if error == nil {
 			item := GetVoteResultStatus(*vote, user)
 			votes = append(votes, item.Vote)
@@ -87,20 +84,13 @@ func GetAllVotesWithResult(user auth.User) []VoteWithResult {
 	return votes
 }
 
-func VoteProcessing(vote Vote, user auth.User, value int) *DoVoteStatus {
+func VoteProcessing(vote Vote, user auth.User, value int) error {
 	voteResult := NewResult(vote, user, value)
 	
-	SaveResult(voteResult)
-	
-	return &DoVoteStatus{
-		Vote: DoVote{
-			Name:  vote.Name,
-			Value: value,
-		},
-	}
+	return SaveResult(voteResult)
 }
 
-func SaveResult(result *VoteResult) {
+func SaveResult(result *VoteResult) error {
 	client := ConnectToRedis()
 	defer client.Close()
 
@@ -108,19 +98,21 @@ func SaveResult(result *VoteResult) {
 	serialized, err := json.Marshal(result)
 
 	if err == nil {
-		err := client.Set("result:" + result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+		err := client.Set("result:"+result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
+	
+	return nil
 }
 
 func NewResult(vote Vote, user auth.User, value int) *VoteResult {
 	return &VoteResult{
 		Id:    vote.Id + ":" + user.Id,
-		value: value,
-		vote:  vote.Id,
-		date:  time.Now().UnixNano(),
+		Value: value,
+		Vote:  vote.Id,
+		Date:  time.Now().UnixNano(),
 	}
 }
 
@@ -129,12 +121,14 @@ func LoadVoteResult(id string) (*VoteResult, error) {
 	defer client.Close()
 
 	data, err := client.Get(id).Result()
+	jsonString, _ := base64.StdEncoding.DecodeString(data)
 
 	if err != nil {
 		return nil, errors.New("Not exist")
 	} else {
 		voteResult := &VoteResult{}
-		json.Unmarshal([]byte(data), &voteResult)
+		json.Unmarshal(jsonString, &voteResult)
+		
 		return voteResult, nil
 	}
 }
@@ -155,7 +149,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 	client := ConnectToRedis()
 	defer client.Close()
 
-	results_keys, err := client.Keys("result:" + vote.Id).Result()
+	results_keys, err := client.Keys("result:" + vote.Id + ":*").Result()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -165,12 +159,12 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 	var green int
 		
 	for _, value := range results_keys {
-		fmt.Println(value)
 		item, err := LoadVoteResult(value)
+		
 		if err == nil {
-			if(item.value == 0) {
+			if(item.Value == 0) {
 				red = red + 1
-			} else if(item.value == 1) {
+			} else if(item.Value == 1) {
 				yellow = yellow + 1
 			} else {
 				green = green + 1
@@ -189,7 +183,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 				Yellow:    yellow,
 				Green:     green,
 				Red:       red,
-				AllUsers:  20,
+				AllUsers:  UsersCount(),
 				VoteUsers: yellow + green + red,
 			},
 		},

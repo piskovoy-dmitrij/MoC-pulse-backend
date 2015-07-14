@@ -110,3 +110,7 @@ func GetUsers() ([]auth.User, error) {
 		return users, nil
 	}
 }
+
+func UsersCount() int {
+	return cap(GetAllUsers())
+}
