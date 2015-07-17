@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/auth"
 	"strconv"
 	"time"
 )
@@ -13,7 +13,7 @@ import (
 func NewVote(name string, owner string) *Vote {
 	client := ConnectToRedis()
 	defer client.Close()
-	
+
 	id := strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	vote := &Vote{
@@ -68,12 +68,12 @@ func GetAllVotesWithResult(user auth.User) []VoteWithResult {
 
 	votes_keys, err := client.Keys("vote:*").Result()
 	if err != nil {
-	    fmt.Println(err)
+		fmt.Println(err)
 	}
 
 	var votes []VoteWithResult
 
-	for _, value := range votes_keys {		
+	for _, value := range votes_keys {
 		vote, error := LoadVote(value)
 		if error == nil {
 			item := GetVoteResultStatus(*vote, user)
@@ -86,7 +86,7 @@ func GetAllVotesWithResult(user auth.User) []VoteWithResult {
 
 func VoteProcessing(vote Vote, user auth.User, value int) error {
 	voteResult := NewResult(vote, user, value)
-	
+
 	return SaveResult(voteResult)
 }
 
@@ -103,7 +103,7 @@ func SaveResult(result *VoteResult) error {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -128,7 +128,7 @@ func LoadVoteResult(id string) (*VoteResult, error) {
 	} else {
 		voteResult := &VoteResult{}
 		json.Unmarshal(jsonString, &voteResult)
-		
+
 		return voteResult, nil
 	}
 }
@@ -153,18 +153,18 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 	if err != nil {
 		fmt.Println(err)
 	}
-	
+
 	var yellow int
 	var red int
 	var green int
-		
+
 	for _, value := range results_keys {
 		item, err := LoadVoteResult(value)
-		
+
 		if err == nil {
-			if(item.Value == 0) {
+			if item.Value == 0 {
 				red = red + 1
-			} else if(item.Value == 1) {
+			} else if item.Value == 1 {
 				yellow = yellow + 1
 			} else {
 				green = green + 1
@@ -174,10 +174,10 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 
 	return &VoteResultStatus{
 		Vote: VoteWithResult{
-			Name: vote.Name,
-			Id:   vote.Id,
+			Name:  vote.Name,
+			Id:    vote.Id,
 			Owner: vote.Owner,
-			Date: vote.Date,
+			Date:  vote.Date,
 			Voted: isVotedByUser(vote, user),
 			Result: Result{
 				Yellow:    yellow,

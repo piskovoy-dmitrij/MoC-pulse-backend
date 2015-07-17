@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/parnurzeal/gorequest"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/auth"
 	"log"
 )
 
@@ -42,10 +42,10 @@ func SaveAuthToken(at auth.AuthToken) {
 		}
 	}
 }
-	
+
 func GetAllUsers() []auth.User {
 	client := ConnectToRedis()
-    defer client.Close()
+	defer client.Close()
 
 	users_keys, err := client.Keys("user:*").Result()
 	if err != nil {

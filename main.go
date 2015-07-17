@@ -6,9 +6,12 @@ import (
 	"github.com/FogCreek/mini"
 	"github.com/julienschmidt/httprouter"
 
+	"net"
 	"net/http"
+	"os"
 
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
+	"github.com/walkline/MoC-pulse-backend/notification"
+	"github.com/walkline/MoC-pulse-backend/tcpsocket"
 )
 
 var notificationSender *notification.Sender
@@ -52,6 +55,29 @@ func main() {
 	router.POST("/user", registerUser)
 	router.POST("/test_notification_sending", testNotificationSending)
 
-	http.ListenAndServe(":8080", router)
+	println("Starting http server...")
 
+	// starting new goroutine
+	go http.ListenAndServe(":8080", router)
+
+	l, err := net.Listen("tcp", ":4242")
+	if err != nil {
+		fmt.Println("Error listening:", err.Error())
+		os.Exit(1)
+	}
+
+	println("Starting tcp server...")
+	// Close the listener when the application closes.
+	defer l.Close()
+	fmt.Println("Listening on :4242...")
+	for {
+		// Listen for an incoming connection.
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting: ", err.Error())
+			os.Exit(1)
+		}
+		// Handle connections in a new goroutine.
+		go tcpsocket.HandleNewConnection(conn)
+	}
 }

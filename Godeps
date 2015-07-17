@@ -2,6 +2,7 @@
 "github.com/FogCreek/mini"
 "github.com/julienschmidt/httprouter"
 "piskovoy-dmitrij/MoC-pulse-backend/notification"
+"walkline/MoC-pulse-backend/socket"
 "net/http"
 "encoding/json"
 "errors"
