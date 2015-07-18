@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/walkline/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/events"
 	"github.com/walkline/MoC-pulse-backend/storage"
 	"net/http"
 	"strconv"
@@ -69,10 +70,16 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	vote := storage.NewVote(params.Name, user.Id)
-	users, _ := storage.GetUsers()
-	notificationSender.Send(users, *vote)
+
+	// i think better use new goroutine
+	go func() {
+		users, _ := storage.GetUsers()
+		notificationSender.Send(users, *vote)
+	}()
 
 	res := storage.GetVoteResultStatus(*vote, *user)
+
+	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -155,6 +162,8 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	storage.VoteProcessing(*vote, *user, params.Value)
 
 	res := storage.GetVoteResultStatus(*vote, *user)
+
+	*events.GetVoteUpdateChan() <- events.VoteUpdateEvent{res}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")

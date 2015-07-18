@@ -83,7 +83,6 @@ func GetUsers() ([]auth.User, error) {
 	if errs != nil {
 		return nil, errors.New("Can't get users from Auth provider")
 	} else {
-
 		var loaded []auth.User
 		json.Unmarshal([]byte(body), &loaded)
 
@@ -94,7 +93,6 @@ func GetUsers() ([]auth.User, error) {
 		for _, value := range exist_users {
 			user_keys[value.Id] = value
 		}
-
 		var users []auth.User
 
 		for _, value := range loaded {

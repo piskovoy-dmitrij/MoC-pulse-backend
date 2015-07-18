@@ -1,0 +1,725 @@
+diff --git a/Godeps b/Godeps
+index fe53d52..b4d35d1 100644
+--- a/Godeps
++++ b/Godeps
+@@ -7,7 +7,7 @@
+ "encoding/json"
+ "errors"
+ "github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+-"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
++"github.com/walkline/MoC-pulse-backend/storage"
+ "gopkg.in/redis.v3"
+ "encoding/base64"
+ "log"
+diff --git a/events/events.go b/events/events.go
+new file mode 100644
+index 0000000..d6c3e4e
+--- /dev/null
++++ b/events/events.go
+@@ -0,0 +1,65 @@
++package events
++
++import (
++	"github.com/walkline/MoC-pulse-backend/storage"
++)
++
++type SomeSocket struct {
++	Id           string
++	NewVoteEvent chan *NewVoteEvent
++	VoteUpdEvent chan *VoteUpdateEvent
++	CloseEvent   chan *SocketClosedEvent
++}
++
++type NewVoteEvent struct {
++	Vote *storage.VoteResultStatus
++}
++
++type VoteUpdateEvent struct {
++	Vote *storage.VoteResultStatus
++}
++
++type NewSocketEvent struct {
++	Socket *SomeSocket
++}
++
++type SocketClosedEvent struct {
++	Socket *SomeSocket
++}
++
++var newVoteChan chan NewVoteEvent
++var voteUpdateChan chan VoteUpdateEvent
++var newSocketsChan chan NewSocketEvent
++var closedSocketsChan chan SocketClosedEvent
++
++func GetNewVoteChan() *(chan NewVoteEvent) {
++	if newVoteChan == nil {
++		newVoteChan = make(chan NewVoteEvent, 1024)
++	}
++
++	return &newVoteChan
++}
++
++func GetVoteUpdateChan() *(chan VoteUpdateEvent) {
++	if voteUpdateChan == nil {
++		voteUpdateChan = make(chan VoteUpdateEvent, 1024)
++	}
++
++	return &voteUpdateChan
++}
++
++func GetNewSocketsChan() *(chan NewSocketEvent) {
++	if newSocketsChan == nil {
++		newSocketsChan = make(chan NewSocketEvent, 1024)
++	}
++
++	return &newSocketsChan
++}
++
++func GetClosedSocketsChan() *(chan SocketClosedEvent) {
++	if closedSocketsChan == nil {
++		closedSocketsChan = make(chan SocketClosedEvent, 1024)
++	}
++
++	return &closedSocketsChan
++}
+diff --git a/httpHandlers.go b/httpHandlers.go
+index ed07219..cd6d082 100644
+--- a/httpHandlers.go
++++ b/httpHandlers.go
+@@ -5,6 +5,7 @@ import (
+ 	"fmt"
+ 	"github.com/julienschmidt/httprouter"
+ 	"github.com/walkline/MoC-pulse-backend/auth"
++	"github.com/walkline/MoC-pulse-backend/events"
+ 	"github.com/walkline/MoC-pulse-backend/storage"
+ 	"net/http"
+ 	"strconv"
+@@ -69,11 +70,17 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+ 	}
+ 
+ 	vote := storage.NewVote(params.Name, user.Id)
+-	users, _ := storage.GetUsers()
+-	notificationSender.Send(users, *vote)
++
++	// i think better use new goroutine
++	go func() {
++		users, _ := storage.GetUsers()
++		notificationSender.Send(users, *vote)
++	}()
+ 
+ 	res := storage.GetVoteResultStatus(*vote, *user)
+ 
++	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
++
+ 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+ 	w.Header().Set("Access-Control-Allow-Origin", "*")
+ 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+@@ -156,6 +163,8 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+ 
+ 	res := storage.GetVoteResultStatus(*vote, *user)
+ 
++	*events.GetVoteUpdateChan() <- events.VoteUpdateEvent{res}
++
+ 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+ 	w.Header().Set("Access-Control-Allow-Origin", "*")
+ 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+diff --git a/main.go b/main.go
+index a4e8649..470cb13 100644
+--- a/main.go
++++ b/main.go
+@@ -2,16 +2,11 @@ package main
+ 
+ import (
+ 	"fmt"
+-
+ 	"github.com/FogCreek/mini"
+ 	"github.com/julienschmidt/httprouter"
+-
+-	"net"
+-	"net/http"
+-	"os"
+-
+ 	"github.com/walkline/MoC-pulse-backend/notification"
+ 	"github.com/walkline/MoC-pulse-backend/tcpsocket"
++	"net/http"
+ )
+ 
+ var notificationSender *notification.Sender
+@@ -60,24 +55,5 @@ func main() {
+ 	// starting new goroutine
+ 	go http.ListenAndServe(":8080", router)
+ 
+-	l, err := net.Listen("tcp", ":4242")
+-	if err != nil {
+-		fmt.Println("Error listening:", err.Error())
+-		os.Exit(1)
+-	}
+-
+-	println("Starting tcp server...")
+-	// Close the listener when the application closes.
+-	defer l.Close()
+-	fmt.Println("Listening on :4242...")
+-	for {
+-		// Listen for an incoming connection.
+-		conn, err := l.Accept()
+-		if err != nil {
+-			fmt.Println("Error accepting: ", err.Error())
+-			os.Exit(1)
+-		}
+-		// Handle connections in a new goroutine.
+-		go tcpsocket.HandleNewConnection(conn)
+-	}
++	tcpsocket.ListenAndServer(":4242")
+ }
+diff --git a/storage/users.go b/storage/users.go
+index 5242e76..ca6e764 100644
+--- a/storage/users.go
++++ b/storage/users.go
+@@ -83,7 +83,6 @@ func GetUsers() ([]auth.User, error) {
+ 	if errs != nil {
+ 		return nil, errors.New("Can't get users from Auth provider")
+ 	} else {
+-
+ 		var loaded []auth.User
+ 		json.Unmarshal([]byte(body), &loaded)
+ 
+@@ -94,7 +93,6 @@ func GetUsers() ([]auth.User, error) {
+ 		for _, value := range exist_users {
+ 			user_keys[value.Id] = value
+ 		}
+-
+ 		var users []auth.User
+ 
+ 		for _, value := range loaded {
+diff --git a/tcpsocket/eventsHandler.go b/tcpsocket/eventsHandler.go
+new file mode 100644
+index 0000000..7733ce9
+--- /dev/null
++++ b/tcpsocket/eventsHandler.go
+@@ -0,0 +1,82 @@
++package tcpsocket
++
++import (
++	"bytes"
++	"encoding/json"
++	"github.com/walkline/MoC-pulse-backend/events"
++	"log"
++	"strconv"
++)
++
++func ListenToEvents() {
++	clients := make([]*events.SomeSocket, 0, 1024)
++	clientsCounter := 0
++	for {
++		select {
++		case newVoteEvent := <-*events.GetNewVoteChan():
++			for _, client := range clients {
++				client.NewVoteEvent <- &newVoteEvent
++			}
++		case voteUpdateEvent := <-*events.GetVoteUpdateChan():
++			for _, client := range clients {
++				client.VoteUpdEvent <- &voteUpdateEvent
++			}
++		case newSocketEvent := <-*events.GetNewSocketsChan():
++			clientsCounter++
++			newSocketEvent.Socket.Id = strconv.Itoa(clientsCounter)
++			clients = append(clients, newSocketEvent.Socket)
++		case socketClosedEvent := <-*events.GetClosedSocketsChan():
++			id := socketClosedEvent.Socket.Id
++			index := 0
++			for i, socket := range clients {
++				if socket.Id == id {
++					index = i
++				}
++			}
++
++			clients = append(clients[:index], clients[index+1:]...)
++		}
++	}
++}
++
++func (s *TcpSocket) ListenToEvents() {
++	for {
++		socketClosed := false
++
++		select {
++		case newVoteEvent := <-s.SomeSocket.NewVoteEvent:
++			s.handleNewVoteEvent(newVoteEvent)
++		case voteUpdateEvent := <-s.SomeSocket.VoteUpdEvent:
++			s.handleVoteUpdateEvent(voteUpdateEvent)
++		case _ = <-s.SomeSocket.CloseEvent:
++			close(s.SomeSocket.CloseEvent)
++			close(s.SomeSocket.NewVoteEvent)
++			close(s.SomeSocket.VoteUpdEvent)
++
++			socketClosed = true
++		}
++
++		if socketClosed {
++			log.Println("stop listening...")
++			break
++		}
++	}
++}
++
++func (s *TcpSocket) handleNewVoteEvent(e *events.NewVoteEvent) {
++	var b bytes.Buffer
++	err := json.NewEncoder(&b).Encode(*e.Vote)
++	if err == nil {
++		packet := InitPacket(SC_NEW_VOTE, b.Bytes())
++		s.SendPacket(&packet)
++	}
++}
++
++func (s *TcpSocket) handleVoteUpdateEvent(e *events.VoteUpdateEvent) {
++	var b bytes.Buffer
++	err := json.NewEncoder(&b).Encode(*e.Vote)
++	if err == nil {
++		packet := InitPacket(SC_UPDATE_VOTE, b.Bytes())
++		s.SendPacket(&packet)
++	}
++}
+diff --git a/tcpsocket/packet.go b/tcpsocket/packet.go
+new file mode 100644
+index 0000000..b642d08
+--- /dev/null
++++ b/tcpsocket/packet.go
+@@ -0,0 +1,53 @@
++package tcpsocket
++
++type PulsePucket struct {
++	opcode  uint16
++	size    uint32
++	content []byte
++}
++
++func (p *PulsePucket) ToSlice() []byte {
++	oBuf := make([]byte, 2)
++	sBuf := make([]byte, 4)
++
++	// move uint16 to buffer
++	oBuf[0] = byte((p.opcode >> 8) & 0xFF)
++	oBuf[1] = byte(p.opcode & 0xFF)
++
++	// move uint32 to buffer
++	sBuf[0] = byte((p.size >> 24) & 0xFF)
++	sBuf[1] = byte((p.size >> 16) & 0xFF)
++	sBuf[2] = byte((p.size >> 8) & 0xFF)
++	sBuf[3] = byte(p.size & 0xFF)
++
++	result := append(oBuf, sBuf...)
++	result = append(result, p.content...)
++
++	return result
++}
++
++func InitPacket(opcode uint16, content []byte) PulsePucket {
++	p := PulsePucket{}
++	p.content = content
++	p.opcode = opcode
++	p.size = uint32(len(content))
++	return p
++}
++
++func InitEmptyPacket(opcode uint16) PulsePucket {
++	p := PulsePucket{}
++	p.content = make([]byte, 0)
++	p.opcode = opcode
++	p.size = uint32(len(p.content))
++	return p
++}
++
++func InitPacketWithHeaderData(header []byte) PulsePucket {
++	p := PulsePucket{}
++
++	p.opcode = uint16(header[0])<<8 | uint16(header[1])
++	p.size = uint32(header[2])<<24 | uint32(header[3])<<16 | uint32(header[4])<<8 | uint32(header[5])
++
++	p.content = make([]byte, 0)
++	return p
++}
+diff --git a/tcpsocket/packetsHandler.go b/tcpsocket/packetsHandler.go
+new file mode 100644
+index 0000000..47b4ba8
+--- /dev/null
++++ b/tcpsocket/packetsHandler.go
+@@ -0,0 +1,125 @@
++package tcpsocket
++
++import (
++	"bytes"
++	"encoding/json"
++	"fmt"
++	"github.com/walkline/MoC-pulse-backend/auth"
++	"github.com/walkline/MoC-pulse-backend/events"
++	"github.com/walkline/MoC-pulse-backend/storage"
++)
++
++func (s *TcpSocket) ProccesPacket(packet *PulsePucket) {
++	switch packet.opcode {
++	case CS_AUTH:
++		s.handleAuth(packet)
++	case CS_CREATE_VOTE:
++		s.handleNewVote(packet)
++	case CS_GET_VOTE:
++		s.handleGetVote(packet)
++	case CS_GET_VOTES:
++		s.handleGetVotes(packet)
++	case CS_VOTE_FOR:
++		s.handleVoteFor(packet)
++	}
++}
++
++func (s *TcpSocket) handleNewVote(packet *PulsePucket) {
++	var params CSCreateVoteRequest
++	err := json.Unmarshal(packet.content, &params)
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	vote := storage.NewVote(params.Name, s.user.Id)
++
++	res := storage.GetVoteResultStatus(*vote, s.user)
++
++	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
++}
++
++func (s *TcpSocket) handleGetVote(packet *PulsePucket) {
++	var params CSGetVoteRequest
++	err := json.Unmarshal(packet.content, &params)
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	vote, err := storage.GetVote(params.Id)
++
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	res := storage.GetVoteResultStatus(*vote, s.user)
++
++	var b bytes.Buffer
++	err = json.NewEncoder(&b).Encode(*res)
++	if err == nil {
++		packet := InitPacket(SC_GET_VOTE_RESULT, b.Bytes())
++		s.SendPacket(&packet)
++	}
++}
++
++func (s *TcpSocket) handleGetVotes(packet *PulsePucket) {
++	votes := storage.GetAllVotesWithResult(s.user)
++	res := storage.VotesStatus{
++		Votes: votes,
++	}
++
++	var b bytes.Buffer
++	err := json.NewEncoder(&b).Encode(res)
++	if err == nil {
++		packet := InitPacket(SC_GET_VOTES_RESULT, b.Bytes())
++		s.SendPacket(&packet)
++	}
++}
++
++func (s *TcpSocket) handleVoteFor(packet *PulsePucket) {
++	var params CSVoteForRequest
++	err := json.Unmarshal(packet.content, &params)
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	vote, err := storage.GetVote(params.Id)
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	storage.VoteProcessing(*vote, s.user, params.ColorId)
++
++	res := storage.GetVoteResultStatus(*vote, s.user)
++
++	*events.GetVoteUpdateChan() <- events.VoteUpdateEvent{res}
++}
++
++func (s *TcpSocket) handleAuth(packet *PulsePucket) {
++	var params CSAuthRequest
++	err := json.Unmarshal(packet.content, &params)
++	if err != nil {
++		fmt.Println(err)
++		return
++	}
++
++	if params.Token == "123123" {
++		s.user = auth.User{
++			Id:     "TcpDebug",
++			Email:  "Test@Test.com",
++			Device: 2,
++			DevId:  "",
++		}
++	}
++
++	var b bytes.Buffer
++	err = json.NewEncoder(&b).Encode(s.user)
++	if err == nil {
++		packet := InitPacket(SC_AUTH, b.Bytes())
++		s.SendPacket(&packet)
++	}
++}
+diff --git a/tcpsocket/protocol.go b/tcpsocket/protocol.go
+new file mode 100644
+index 0000000..8c306f9
+--- /dev/null
++++ b/tcpsocket/protocol.go
+@@ -0,0 +1,55 @@
++package tcpsocket
++
++/*
++	Tcp Server uses next protocol.
++	Every packet should have header.
++	Also packet can have content data.
++
++	Header structure:
++		2 bytes - opcode number. Opcodes are described below.
++		4 bytes - content size.
++	Content structure:
++		It has json structure, every opcode has its own keys.
++*/
++
++// Opcodes
++// CS_* - Client to Server
++// SC_* - Server to Client
++const (
++	CS_AUTH = iota
++	SC_AUTH
++	CS_GET_VOTES
++	SC_GET_VOTES_RESULT
++	CS_GET_VOTE
++	SC_GET_VOTE_RESULT
++	CS_VOTE_FOR
++	SC_UPDATE_VOTE
++	CS_CREATE_VOTE
++	SC_NEW_VOTE
++)
++
++// CS_AUTH
++type CSAuthRequest struct {
++	Token string `json:"token"`
++}
++
++// CS_GET_VOTES
++type CSGetVotesRequest struct {
++	// empty
++}
++
++// CS_GET_VOTE
++type CSGetVoteRequest struct {
++	Id string `json:"id"`
++}
++
++// CS_VOTE_FOR
++type CSVoteForRequest struct {
++	Id      string `json:"id"`
++	ColorId int    `json:"color"`
++}
++
++// CS_CREATE_VOTE
++type CSCreateVoteRequest struct {
++	Name string `json:"name"`
++}
+diff --git a/tcpsocket/socket.go b/tcpsocket/socket.go
+new file mode 100644
+index 0000000..316795b
+--- /dev/null
++++ b/tcpsocket/socket.go
+@@ -0,0 +1,91 @@
++package tcpsocket
++
++import (
++	"github.com/walkline/MoC-pulse-backend/auth"
++	"github.com/walkline/MoC-pulse-backend/events"
++	"log"
++	"net"
++	"os"
++)
++
++type TcpSocket struct {
++	events.SomeSocket
++
++	user      auth.User
++	conection *net.Conn
++}
++
++func (s *TcpSocket) SendPacket(p *PulsePucket) {
++	(*s.conection).Write(p.ToSlice())
++}
++
++func ListenAndServer(host string) {
++	l, err := net.Listen("tcp", host)
++	if err != nil {
++		log.Println("TcpSocket Error listening:", err.Error())
++		os.Exit(1)
++	}
++
++	println("Starting tcp server...")
++
++	defer l.Close()
++
++	defer close(*events.GetNewVoteChan())
++	defer close(*events.GetVoteUpdateChan())
++	defer close(*events.GetNewSocketsChan())
++	defer close(*events.GetClosedSocketsChan())
++
++	go ListenToEvents()
++
++	for {
++		conn, err := l.Accept()
++		if err != nil {
++			log.Println("TcpSocket Error accepting: ", err.Error())
++			os.Exit(1)
++		}
++
++		go HandleNewConnection(conn)
++	}
++}
++
++func HandleNewConnection(c net.Conn) {
++	s := TcpSocket{conection: &c}
++
++	// closing in ListenToEvents()
++	s.SomeSocket.NewVoteEvent = make(chan *events.NewVoteEvent)
++	s.SomeSocket.VoteUpdEvent = make(chan *events.VoteUpdateEvent)
++	s.SomeSocket.CloseEvent = make(chan *events.SocketClosedEvent)
++
++	go s.ListenToEvents()
++
++	*events.GetNewSocketsChan() <- events.NewSocketEvent{&s.SomeSocket}
++
++	defer ConnectionClosed(&s)
++
++	// read
++	for {
++		header := make([]byte, 6)
++		headerLen, err := c.Read(header)
++		if err != nil || headerLen != 6 {
++			break
++		}
++
++		packet := InitPacketWithHeaderData(header)
++
++		content := make([]byte, packet.size)
++		contLen, err := c.Read(content)
++		if err != nil || contLen != int(packet.size) {
++			break
++		}
++
++		packet.content = content
++
++		s.ProccesPacket(&packet)
++	}
++}
++
++func ConnectionClosed(s *TcpSocket) {
++	*events.GetClosedSocketsChan() <- events.SocketClosedEvent{&s.SomeSocket}
++	s.SomeSocket.CloseEvent <- &events.SocketClosedEvent{&s.SomeSocket}
++	log.Println("ConnectionClosed")
++}
+diff --git a/tcpsocket/socketHandlers.go b/tcpsocket/socketHandlers.go
+deleted file mode 100644
+index ac4ee54..0000000
+--- a/tcpsocket/socketHandlers.go
++++ /dev/null
+@@ -1,90 +0,0 @@
+-package tcpsocket
+-
+-import (
+-	//"bufio"
+-	"bytes"
+-	"encoding/binary"
+-	"encoding/json"
+-	"github.com/walkline/MoC-pulse-backend/auth"
+-	"log"
+-	"net"
+-)
+-
+-const (
+-	CS_AUTH = iota
+-	SC_AUTH
+-	CS_GET_VOTES
+-	SC_GET_VOTES_RESULT
+-	CS_GET_VOTE
+-	SC_GET_VOTE_RESULT
+-	CS_VOTE_FOR
+-	SC_UPDATE_VOTE
+-	CS_CREATE_VOTE
+-	SC_NEW_VOTE
+-)
+-
+-type TcpConn struct {
+-	user      auth.User
+-	conection *net.Conn
+-}
+-
+-type PulsePucket struct {
+-	opcode  uint16
+-	size    uint32
+-	content []byte
+-}
+-
+-func (c *TcpConn) SendPacket(p *PulsePucket) {
+-	(*(*c).conection).Write(p.ToSlice())
+-}
+-
+-func (p *PulsePucket) ToSlice() []byte {
+-	oBuf := make([]byte, 2)
+-	sBuf := make([]byte, 4)
+-	binary.LittleEndian.PutUint16(oBuf, p.opcode)
+-	binary.LittleEndian.PutUint32(sBuf, p.size)
+-
+-	result := append(oBuf, sBuf...)
+-	result = append(result, p.content...)
+-
+-	return result
+-}
+-
+-func InitPacket(opcode uint16, content []byte) PulsePucket {
+-	p := PulsePucket{}
+-	p.content = content
+-	p.opcode = opcode
+-	p.size = uint32(len(content))
+-	return p
+-}
+-
+-func InitEmptyPacket(opcode uint16) PulsePucket {
+-	p := PulsePucket{}
+-	p.content = make([]byte, 0)
+-	p.opcode = opcode
+-	p.size = uint32(len(p.content))
+-	return p
+-}
+-
+-var globalWriteChan = make(chan *PulsePucket)
+-
+-func HandleNewConnection(c net.Conn) {
+-	user := auth.User{
+-		Id:     "debug",
+-		Email:  "test@test.com",
+-		Device: 2,
+-		DevId:  "",
+-	}
+-
+-	tcpConnection := TcpConn{user, &c}
+-
+-	// json to []byte
+-	var b bytes.Buffer
+-	err := json.NewEncoder(&b).Encode(user)
+-	if err == nil {
+-		packet := InitPacket(SC_UPDATE_VOTE, b.Bytes())
+-		tcpConnection.SendPacket(&packet)
+-	}
+-
+-	log.Println("new connection")
+-}

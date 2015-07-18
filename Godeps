@@ -7,7 +7,7 @@
 "encoding/json"
 "errors"
 "github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
+"github.com/walkline/MoC-pulse-backend/storage"
 "gopkg.in/redis.v3"
 "encoding/base64"
 "log"
