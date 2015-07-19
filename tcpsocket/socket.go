@@ -71,14 +71,14 @@ func HandleNewConnection(c net.Conn) {
 		}
 
 		packet := InitPacketWithHeaderData(header)
-
-		content := make([]byte, packet.size)
-		contLen, err := c.Read(content)
-		if err != nil || contLen != int(packet.size) {
-			break
+		if packet.size > 0 {
+			content := make([]byte, packet.size)
+			contLen, err := c.Read(content)
+			if err != nil || contLen != int(packet.size) {
+				break
+			}
+			packet.content = content
 		}
-
-		packet.content = content
 
 		s.ProccesPacket(&packet)
 	}
