@@ -2,13 +2,11 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/FogCreek/mini"
 	"github.com/julienschmidt/httprouter"
-
+	"github.com/walkline/MoC-pulse-backend/notification"
+	"github.com/walkline/MoC-pulse-backend/tcpsocket"
 	"net/http"
-
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 )
 
 var notificationSender *notification.Sender
@@ -52,6 +50,10 @@ func main() {
 	router.POST("/user", registerUser)
 	router.POST("/test_notification_sending", testNotificationSending)
 
-	http.ListenAndServe(":8080", router)
+	println("Starting http server...")
 
+	// starting new goroutine
+	go http.ListenAndServe(":8080", router)
+
+	tcpsocket.ListenAndServer(":4242")
 }

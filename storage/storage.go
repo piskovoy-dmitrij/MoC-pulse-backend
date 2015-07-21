@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/auth"
 	"gopkg.in/redis.v3"
 )
 
@@ -67,13 +67,13 @@ func ConnectToRedis() *redis.Client {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	
+
 	return client
 }
 
 func LoadAuthToken(id string) (*auth.AuthToken, error) {
 	client := ConnectToRedis()
-	
+
 	data, err := client.Get(id).Result()
 	if err != nil {
 		return nil, errors.New("Not exist")

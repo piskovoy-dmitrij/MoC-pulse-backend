@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
+	"github.com/walkline/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/events"
+	"github.com/walkline/MoC-pulse-backend/storage"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/julienschmidt/httprouter"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -22,8 +23,8 @@ func storageConnect() {
 }
 
 type ParamSt struct {
-	Name  string `json: name`
-	Type  string `json: type`
+	Name string `json: name`
+	Type string `json: type`
 }
 
 type DoVotePrm struct {
@@ -55,27 +56,38 @@ func authenticate(token string) (*auth.User, error) {
 	}
 }
 
-func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {	
+func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
 		return
 	}
-	
+
 	var params ParamSt
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		fmt.Println(err)
 	}
-	
+
 	vote := storage.NewVote(params.Name, user.Id)
+<<<<<<< HEAD:handlers.go
 	users, uErr := storage.GetUsers()
 	
 	if uErr == nil {
 		notificationSender.Send(users, *vote)
 	}
+=======
+
+	// i think better use new goroutine
+	go func() {
+		users, _ := storage.GetUsers()
+		notificationSender.Send(users, *vote)
+	}()
+>>>>>>> 189b9515a8c33122be62c08547f3e4637469c28d:httpHandlers.go
 
 	res := storage.GetVoteResultStatus(*vote, *user)
+
+	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -112,7 +124,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 }
 
-func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {	
+func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		w.WriteHeader(400)
@@ -156,8 +168,10 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	storage.VoteProcessing(*vote, *user, params.Value)
-	
+
 	res := storage.GetVoteResultStatus(*vote, *user)
+
+	*events.GetVoteUpdateChan() <- events.VoteUpdateEvent{res}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Access-Control-Allow-Origin", "*")

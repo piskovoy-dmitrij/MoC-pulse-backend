@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/parnurzeal/gorequest"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/walkline/MoC-pulse-backend/auth"
 	"log"
 )
 
@@ -42,10 +42,10 @@ func SaveAuthToken(at auth.AuthToken) {
 		}
 	}
 }
-	
+
 func GetAllUsers() []auth.User {
 	client := ConnectToRedis()
-    defer client.Close()
+	defer client.Close()
 
 	users_keys, err := client.Keys("user:*").Result()
 	if err != nil {
@@ -83,7 +83,6 @@ func GetUsers() ([]auth.User, error) {
 	if errs != nil {
 		return nil, errors.New("Can't get users from Auth provider")
 	} else {
-
 		var loaded []auth.User
 		json.Unmarshal([]byte(body), &loaded)
 
@@ -94,7 +93,6 @@ func GetUsers() ([]auth.User, error) {
 		for _, value := range exist_users {
 			user_keys[value.Id] = value
 		}
-
 		var users []auth.User
 
 		for _, value := range loaded {
