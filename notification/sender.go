@@ -7,8 +7,8 @@ import (
 	"github.com/Mistobaan/go-apns"
 	"github.com/alexjlockwood/gcm"
 	"github.com/mostafah/mandrill"
-	"github.com/walkline/MoC-pulse-backend/auth"
-	"github.com/walkline/MoC-pulse-backend/storage"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 type Sender struct {

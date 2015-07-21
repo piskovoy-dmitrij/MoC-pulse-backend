@@ -1,8 +1,8 @@
 package tcpsocket
 
 import (
-	"github.com/walkline/MoC-pulse-backend/auth"
-	"github.com/walkline/MoC-pulse-backend/events"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"log"
 	"net"
 	"os"

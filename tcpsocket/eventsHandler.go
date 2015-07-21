@@ -3,7 +3,7 @@ package tcpsocket
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/walkline/MoC-pulse-backend/events"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"log"
 	"strconv"
 )

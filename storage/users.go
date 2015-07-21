@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/parnurzeal/gorequest"
-	"github.com/walkline/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"log"
 )
 

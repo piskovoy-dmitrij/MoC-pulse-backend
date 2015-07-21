@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/walkline/MoC-pulse-backend/storage"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 type SomeSocket struct {

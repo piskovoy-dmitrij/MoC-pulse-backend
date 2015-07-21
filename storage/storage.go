@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"errors"
-	"github.com/walkline/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"gopkg.in/redis.v3"
 )
 

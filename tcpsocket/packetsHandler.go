@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/walkline/MoC-pulse-backend/auth"
-	"github.com/walkline/MoC-pulse-backend/events"
-	"github.com/walkline/MoC-pulse-backend/storage"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
 func (s *TcpSocket) ProccesPacket(packet *PulsePucket) {
