@@ -69,8 +69,11 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	
 	vote := storage.NewVote(params.Name, user.Id)
-	users, _ := storage.GetUsers()
-	notificationSender.Send(users, *vote)
+	users, uErr := storage.GetUsers()
+	
+	if uErr == nil {
+		notificationSender.Send(users, *vote)
+	}
 
 	res := storage.GetVoteResultStatus(*vote, *user)
 
@@ -172,7 +175,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	lastname := r.PostFormValue("last_name")
 	device, _ := strconv.Atoi(r.PostFormValue("device"))
 	dev_id := r.PostFormValue("dev_id")
-	token := r.PostFormValue("tiken")
+	token := r.PostFormValue("token")
 	if token != "BE7C411D475AEA4CF1D7B472D5BD1" {
 		w.WriteHeader(403)
 		return
@@ -196,7 +199,6 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	at := auth.NewAuthToken(*user, time.Now(), secret)
-	fmt.Println("Saving to Redis")
 
 	storage.SaveUser(*user)
 	storage.SaveAuthToken(*at)
@@ -219,7 +221,8 @@ func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httproute
 		w.WriteHeader(400)
 		return
 	}*/
-	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
+//	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "14ad0aba799d831ad77239c7bb62b29e43bd7ebccb81716445b3124e42851ee8"}}, storage.Vote{Id: "5", Name: "Hello world"})
 
 	w.WriteHeader(200)
 }

@@ -84,6 +84,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	var devices Devices
 
 	for i := range users {
+		fmt.Printf("user[%d]: %+v\n", i, users[i])
 		switch users[i].Device {
 		case DEVICE_IOS:
 			devices.AppleIds = append(devices.AppleIds, users[i].DevId)
