@@ -116,7 +116,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			payload := &ApplePayload{}
 			payload.Aps.Alert = vote.Name
 			payload.Aps.Title = "MOC Pulse"
-			payload.Aps.Category = "watchkit"
+			payload.Aps.Category = "newVote"
 			payload.Aps.Vote = vote
 			actions := &SimulatorAction{}
 			actions.Title = "Vote"
