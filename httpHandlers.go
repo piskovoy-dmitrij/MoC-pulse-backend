@@ -226,17 +226,21 @@ func testIOSNotificationSending(w http.ResponseWriter, r *http.Request, _ httpro
 	dev_id := r.PostFormValue("dev_id")
 	if dev_id != "" {
 		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
+		//	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
+		w.WriteHeader(200)
+	} else {
+		w.WriteHeader(400)
 	}
-	//	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
-	w.WriteHeader(200)
 }
 
 func testAndroidNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	dev_id := r.PostFormValue("dev_id")
 	if dev_id != "" {
 		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 1, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
+		w.WriteHeader(200)
+	} else {
+		w.WriteHeader(400)
 	}
-	w.WriteHeader(200)
 }
 
 func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
