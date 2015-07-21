@@ -3,6 +3,7 @@ package notification
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/Mistobaan/go-apns"
 	"github.com/alexjlockwood/gcm"
@@ -96,8 +97,8 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	}
 
 	if len(devices.GoogleIds) > 0 {
-		fmt.Printf("Notification sender debug: Trying to send Google device notifications to %v", devices.GoogleIds)
-		data := map[string]interface{}{"message": vote.Name} //TODO
+		fmt.Printf("Notification sender debug: Trying to send Google device notifications to %v\n", devices.GoogleIds)
+		data := map[string]interface{}{"date": strconv.FormatInt(vote.Date, 10), "id": string(vote.Id), "name": string(vote.Name), "owner": string(vote.Owner), "voted": strconv.FormatBool(vote.Voted)}
 		msg := gcm.NewMessage(data, devices.GoogleIds...)
 		sender := &gcm.Sender{ApiKey: this.GoogleApiKey}
 		_, err := sender.Send(msg, 2)

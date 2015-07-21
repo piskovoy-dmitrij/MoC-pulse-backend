@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/FogCreek/mini"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/tcpsocket"
-	"net/http"
 )
 
 var notificationSender *notification.Sender
@@ -48,7 +49,8 @@ func main() {
 	router.PUT("/votes/:id", doVote)
 	router.GET("/vote", emailVote)
 	router.POST("/user", registerUser)
-	router.POST("/test_notification_sending", testNotificationSending)
+	router.POST("/test_ios_notification", testIOSNotificationSending)
+	router.POST("/test_android_notification", testAndroidNotificationSending)
 
 	println("Starting http server...")
 

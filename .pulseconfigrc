@@ -1,6 +1,6 @@
 db = 'localhost'
 
-GoogleApiKey = ''
+GoogleApiKey = 'AIzaSyA1JPxkEU8_urxN80bRLJYGZhdXuQL1bcw'
 AppleCertPath = 'cert.pem'
 AppleKeyPath = 'key-noenc.pem'
 AppleServer = 'gateway.sandbox.push.apple.com:2195'

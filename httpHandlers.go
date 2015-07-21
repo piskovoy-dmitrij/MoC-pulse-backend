@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 var secret string = "shjgfshfkjgskdfjgksfghks"
@@ -221,14 +222,15 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
-func testNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	/*user, error := authenticate(r.Header.Get("auth_token"))
-	if error != nil {
-		w.WriteHeader(400)
-		return
-	}*/
+func testIOSNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	//	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
-	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "14ad0aba799d831ad77239c7bb62b29e43bd7ebccb81716445b3124e42851ee8"}}, storage.Vote{Id: "5", Name: "Hello world"})
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "14ad0aba799d831ad77239c7bb62b29e43bd7ebccb81716445b3124e42851ee8"}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
+
+	w.WriteHeader(200)
+}
+
+func testAndroidNotificationSending(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 1, DevId: "APA91bHRO3SYwZAkHsL6mXD0S48Q406U5iMlt9UGFKDQB5cvJruOS0-uVSKmkhpxV4VhNjHODu0WNyeErtR6Sq4LjLN2XmpfgpSFF2UpoZkALogsYL1s0ZfQVrxBx4BMVFqSySbBTIZM"}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
 
 	w.WriteHeader(200)
 }
