@@ -1,0 +1,55 @@
+{
+	"ImportPath": "github.com/piskovoy-dmitrij/MoC-pulse-backend",
+	"GoVersion": "go1.4.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/FogCreek/mini",
+			"Rev": "290a9f4f964519b9a5fdc9f1173d50c86691ab1c"
+		},
+		{
+			"ImportPath": "github.com/Mistobaan/go-apns",
+			"Rev": "c953648b79eeb491431100ed811093e14548ddb8"
+		},
+		{
+			"ImportPath": "github.com/alexjlockwood/gcm",
+			"Rev": "3cef374f3d8e0b92ed8815541baeaf1b97302f23"
+		},
+		{
+			"ImportPath": "github.com/jmcvetta/napping",
+			"Comment": "v1-17-g24cd6fd",
+			"Rev": "24cd6fd789202bd59699d1bd74f390c598d48c4e"
+		},
+		{
+			"ImportPath": "github.com/julienschmidt/httprouter",
+			"Comment": "v1.1-3-g6aacfd5",
+			"Rev": "6aacfd5ab513e34f7e64ea9627ab9670371b34e7"
+		},
+		{
+			"ImportPath": "github.com/mostafah/mandrill",
+			"Rev": "571417c5507d6c090d6ee857ccf399a2012233c5"
+		},
+		{
+			"ImportPath": "github.com/parnurzeal/gorequest",
+			"Comment": "v0.2.5-3-g19eed7d",
+			"Rev": "19eed7daff5653f5f753b3474f194b8f37c70463"
+		},
+		{
+			"ImportPath": "golang.org/x/net/publicsuffix",
+			"Rev": "d9558e5c97f85372afee28cf2b6059d7d3818919"
+		},
+		{
+			"ImportPath": "gopkg.in/bsm/ratelimit.v1",
+			"Rev": "bda20d5067a03094fc6762f7ead53027afac5f28"
+		},
+		{
+			"ImportPath": "gopkg.in/bufio.v1",
+			"Comment": "v1",
+			"Rev": "567b2bfa514e796916c4747494d6ff5132a1dfce"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3",
+			"Comment": "v3.1.5",
+			"Rev": "2cfe5df7d2593e20161594e4c02ebb305c9ccd8e"
+		}
+	]
+}

@@ -2,3 +2,4 @@
 /.idea/*
 /MoC-pulse-backend
 *.exe
+Godeps
