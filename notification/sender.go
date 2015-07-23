@@ -110,6 +110,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	if len(devices.AppleIds) > 0 {
 		fmt.Printf("Notification sender debug: Server: %s, Cert: %s, Key: %s\n", this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
 		apn, err := apns.NewClient(this.AppleServer, this.AppleCertPath, this.AppleKeyPath)
+		apn.MAX_PAYLOAD_SIZE = 2048
 		if err != nil {
 			fmt.Printf("Notification sender ERROR: Sending notification to Apple device failed: %s\n", err.Error())
 		} else {
