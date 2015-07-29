@@ -1,5 +1,18 @@
 db = 'localhost'
 
+# Log levels:
+# DEBUG = 4 
+# INFO = 3
+# WARNING = 2
+# ERROR = 1
+# no log = 0
+
+LogLevel = 4
+LogPath = 'MoC-pulse-backend.log'
+
+HttpRouterPort = 3001
+TcpSocketPort = 4242
+
 GoogleApiKey = 'AIzaSyA1JPxkEU8_urxN80bRLJYGZhdXuQL1bcw'
 AppleCertPath = 'cert.pem'
 AppleKeyPath = 'key-noenc.pem'

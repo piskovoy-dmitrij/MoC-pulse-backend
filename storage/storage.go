@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"gopkg.in/redis.v3"
 )
