@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
@@ -79,7 +80,8 @@ func LoadAuthToken(id string) (*auth.AuthToken, error) {
 		return nil, errors.New("Not exist")
 	} else {
 		at := &auth.AuthToken{}
-		json.Unmarshal([]byte(data), &at)
+		jsonString, _ := base64.StdEncoding.DecodeString(data)
+		json.Unmarshal([]byte(jsonString), at)
 		return at, nil
 	}
 }

@@ -188,7 +188,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	user, err := storage.LoadUser("user:" + id)
-	if err != nil {
+	if err == nil {
 		user.Device = device
 		user.DevId = dev_id
 		user.Email = email
