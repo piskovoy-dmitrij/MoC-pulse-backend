@@ -74,7 +74,8 @@ func LoadUser(id string) (*auth.User, error) {
 		return nil, errors.New("Not exist")
 	} else {
 		user := &auth.User{}
-		json.Unmarshal([]byte(data), &user)
+		jsonString, _ := base64.StdEncoding.DecodeString(data)
+		json.Unmarshal([]byte(jsonString), user)
 		return user, nil
 	}
 }
