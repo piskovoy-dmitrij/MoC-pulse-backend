@@ -70,7 +70,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	funcPrefix := "New vote creation"
 	Debug.Printf("%s: start\n", funcPrefix)
 	defer Debug.Printf("%s: end\n", funcPrefix)
-	Debug.Printf("%s: authenticating user...\n")
+	Debug.Printf("%s: authenticating user...\n", funcPrefix)
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		Error.Printf("%s: user authentication failed\n", funcPrefix)
@@ -180,7 +180,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	funcPrefix := "Processing voting"
 	Debug.Printf("%s: start\n", funcPrefix)
 	defer Debug.Printf("%s: end\n", funcPrefix)
-	Debug.Printf("%s: authenticating user...\n")
+	Debug.Printf("%s: authenticating user...\n", funcPrefix)
 	user, error := authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		Error.Printf("%s: user authentication failed\n", funcPrefix)
