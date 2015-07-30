@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/julienschmidt/httprouter"
+	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"

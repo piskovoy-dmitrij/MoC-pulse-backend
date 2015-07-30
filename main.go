@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/FogCreek/mini"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/Godeps/_workspace/src/github.com/julienschmidt/httprouter"
+	"github.com/FogCreek/mini"
+	"github.com/julienschmidt/httprouter"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/tcpsocket"
 )
