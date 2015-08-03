@@ -176,7 +176,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 		Vote: VoteWithResult{
 			Name:  vote.Name,
 			Id:    vote.Id,
-			Owner: vote.Owner,
+			Owner: user,
 			Date:  vote.Date,
 			Voted: isVotedByUser(vote, user),
 			Result: Result{
