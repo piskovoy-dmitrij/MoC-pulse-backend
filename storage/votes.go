@@ -172,11 +172,18 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 		}
 	}
 
+	ownerUser,error := LoadUser("user:" + vote.Owner)
+	
+	if(error != nil) {
+		fmt.Println(error)
+		ownerUser = &user	
+	}
+
 	return &VoteResultStatus{
 		Vote: VoteWithResult{
 			Name:  vote.Name,
 			Id:    vote.Id,
-			Owner: user,
+			Owner: *ownerUser,
 			Date:  vote.Date,
 			Voted: isVotedByUser(vote, user),
 			Result: Result{
