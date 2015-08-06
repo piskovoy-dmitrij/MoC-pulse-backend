@@ -3,7 +3,7 @@ package tcpsocket
 import (
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
-	"github.com/walkline/MoC-pulse-backend/notification"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 	"log"
 	"net"
 	"os"
