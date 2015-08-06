@@ -9,6 +9,34 @@ import (
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 )
 
+var secret string = "shjgfshfkjgskdfjgksfghks"
+
+func authenticate(token string) (*auth.User, error) {
+	if token == "123123" {
+		u := &auth.User{
+			Id:     "debug",
+			Email:  "test@test.com",
+			Device: 2,
+			DevId:  "",
+		}
+		return u, nil
+	}
+	at, err := storage.LoadAuthToken(token)
+	if err != nil {
+		return nil, err
+	}
+	info, err := at.GetTokenInfo(secret)
+	if err != nil {
+		return nil, err
+	}
+	user, err := storage.LoadUser("user:" + info.Id)
+	if err != nil {
+		return nil, err
+	} else {
+		return user, nil
+	}
+}
+
 func (s *TcpSocket) ProccesPacket(packet *PulsePucket) {
 	switch packet.opcode {
 	case CS_AUTH:
@@ -35,6 +63,11 @@ func (s *TcpSocket) handleNewVote(packet *PulsePucket) {
 	vote := storage.NewVote(params.Name, s.user.Id)
 
 	res := storage.GetVoteResultStatus(*vote, s.user)
+
+	go func() {
+		users, _ := storage.GetUsers()
+		notificationSender.Send(users, *vote)
+	}()
 
 	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
 }
@@ -107,13 +140,10 @@ func (s *TcpSocket) handleAuth(packet *PulsePucket) {
 		return
 	}
 
-	if params.Token == "123123" {
-		s.user = auth.User{
-			Id:     "TcpDebug",
-			Email:  "Test@Test.com",
-			Device: 2,
-			DevId:  "",
-		}
+	user, authErr := authenticate(params.Token)
+
+	if authErr == nil {
+		s.user = *user
 	}
 
 	var b bytes.Buffer

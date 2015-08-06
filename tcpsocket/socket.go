@@ -3,10 +3,13 @@ package tcpsocket
 import (
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
+	"github.com/walkline/MoC-pulse-backend/notification"
 	"log"
 	"net"
 	"os"
 )
+
+var notificationSender *notification.Sender
 
 type TcpSocket struct {
 	events.SomeSocket
@@ -19,7 +22,8 @@ func (s *TcpSocket) SendPacket(p *PulsePucket) {
 	(*s.conection).Write(p.ToSlice())
 }
 
-func ListenAndServer(host string) {
+func ListenAndServer(host string, ns *notification.Sender) {
+	notificationSender = ns
 	l, err := net.Listen("tcp", host)
 	if err != nil {
 		log.Println("TcpSocket Error listening:", err.Error())
@@ -87,5 +91,4 @@ func HandleNewConnection(c net.Conn) {
 func ConnectionClosed(s *TcpSocket) {
 	*events.GetClosedSocketsChan() <- events.SocketClosedEvent{&s.SomeSocket}
 	s.SomeSocket.CloseEvent <- &events.SocketClosedEvent{&s.SomeSocket}
-	log.Println("ConnectionClosed")
 }
