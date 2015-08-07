@@ -106,7 +106,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			log.Error.Printf("%s: sending notification to Google device failed: %s\n", funcPrefix, err.Error())
 		} else {
 			log.Debug.Printf("%s: json for sending as notification to Google device: %v\n", funcPrefix, string(bytes))
-			data := map[string]interface{}{"vote": bytes}
+			data := map[string]interface{}{"vote": string(bytes)}
 			msg := gcm.NewMessage(data, devices.GoogleIds...)
 			sender := &gcm.Sender{ApiKey: this.GoogleApiKey}
 			_, err := sender.Send(msg, 2)
