@@ -137,6 +137,8 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(400)
 		return
 	}
+	
+	log.Info.Printf("%s: vote was successfully found: [%+v]\n", funcPrefix, vote)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
 	res := storage.GetVoteResultStatus(*vote, *user)

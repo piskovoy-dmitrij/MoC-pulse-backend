@@ -176,7 +176,12 @@ func GetVoteResultStatus(vote Vote, user auth.User) *VoteResultStatus {
 	
 	if(error != nil) {
 		fmt.Println(error)
-		ownerUser = &user	
+		ownerUser = &auth.User{
+			Id:     "debug",
+			Email:  "test@test.com",
+			Device: 2,
+			DevId:  "",
+		}	
 	}
 
 	return &VoteResultStatus{
