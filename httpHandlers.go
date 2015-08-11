@@ -299,7 +299,6 @@ func testIOSNotificationSending(w http.ResponseWriter, r *http.Request, _ httpro
 	if dev_id != "" {
 		log.Info.Printf("%s: trying to send notification for dev_id '%s'...\n", funcPrefix, dev_id)
 		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
-		//	notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: "ca4f2547a7fc19c4b92a27e940c373d3d3bded3102d5eddc4f63d74d615fab2c"}}, storage.Vote{Id: "5", Name: "Hello world"})
 		w.WriteHeader(200)
 	} else {
 		log.Warning.Printf("%s: there is no dev_id in request!\n", funcPrefix)
