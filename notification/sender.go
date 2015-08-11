@@ -30,10 +30,10 @@ type Devices struct {
 }
 
 type Aps struct {
-	Alert    string       `json:"alert"`
-	Title    string       `json:"title"`
-	Category string       `json:"category"`
-	Vote     storage.Vote `json:"vote"`
+	Alert    string                 `json:"alert"`
+	Title    string                 `json:"title"`
+	Category string                 `json:"category"`
+	Vote     storage.VoteWithResult `json:"vote"`
 }
 
 type SimulatorAction struct {
@@ -84,6 +84,21 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	ownerUser, err := storage.LoadUser("user:" + vote.Owner)
+	if err != nil {
+		log.Warning.Printf("%s: loading owner user from vote failed: %s\n", funcPrefix, err.Error())
+		ownerUser = &auth.User{
+			Id:        "",
+			Email:     "",
+			Device:    2,
+			DevId:     "",
+			FirstName: "",
+			LastName:  "",
+		}
+	}
+
+	voteWithResult := storage.GetVoteResultStatus(vote, *ownerUser).Vote // used for getting VoteWithResult structure from Vote
+
 	var devices Devices
 
 	log.Debug.Printf("%s: getting DevIds from users...\n", funcPrefix)
@@ -101,7 +116,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 
 	if len(devices.GoogleIds) > 0 {
 		log.Debug.Printf("%s: trying to send Google device notifications to %v\n", funcPrefix, devices.GoogleIds)
-		bytes, err := json.Marshal(vote)
+		bytes, err := json.Marshal(voteWithResult)
 		if err != nil {
 			log.Error.Printf("%s: sending notification to Google device failed: %s\n", funcPrefix, err.Error())
 		} else {
@@ -124,10 +139,10 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			log.Error.Printf("%s: sending notification to Apple device failed: %s\n", funcPrefix, err.Error())
 		} else {
 			payload := &ApplePayload{}
-			payload.Aps.Alert = vote.Name
+			payload.Aps.Alert = voteWithResult.Name
 			payload.Aps.Title = "MOC Pulse"
 			payload.Aps.Category = "newVote"
-			payload.Aps.Vote = vote
+			payload.Aps.Vote = voteWithResult
 			actions := &SimulatorAction{}
 			actions.Title = "Vote"
 			actions.Identifier = "voteButtonAction"
@@ -151,8 +166,8 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 			log.Error.Printf("%s: sending notification to Email failed: %s\n", funcPrefix, err.Error())
 		} else {
 			data := make(map[string]string)
-			data["QUESTION"] = vote.Name
-			data["VOTE"] = vote.Id
+			data["QUESTION"] = voteWithResult.Name
+			data["VOTE"] = voteWithResult.Id
 			for i := range devices.OtherUsers {
 				data["TOKEN"] = devices.OtherUsers[i].Id
 				log.Debug.Printf("%s: trying to send Email notification to %v\n", funcPrefix, devices.OtherUsers[i].Email)
