@@ -138,7 +138,7 @@ func isVotedByUser(vote Vote, user auth.User) bool {
 	defer client.Close()
 
 	_, err := client.Get("result:" + vote.Id + ":" + user.Id).Result()
-	if err == nil {
+	if err != nil {
 		return false
 	} else {
 		return true
