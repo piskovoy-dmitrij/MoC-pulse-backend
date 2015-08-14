@@ -95,6 +95,14 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	go func() {
 		log.Debug.Printf("%s: getting users from storage...\n", funcPrefix)
 		users, _ := storage.GetUsers()
+		log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
+		for p, v := range users {
+			if user.Id == v.Id {
+				users = append(users[:p], users[p+1:]...)
+				log.Debug.Printf("%s: vote creator has been found and succesfully removed from the list\n", funcPrefix)
+				break
+			}
+		}
 		log.Debug.Printf("%s: sending notifications to users...\n", funcPrefix)
 		notificationSender.Send(users, *vote)
 	}()
@@ -137,7 +145,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.WriteHeader(400)
 		return
 	}
-	
+
 	log.Info.Printf("%s: vote was successfully found: [%+v]\n", funcPrefix, vote)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
