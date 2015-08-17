@@ -208,6 +208,12 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
+	if storage.isVotedByUser(*vote, *user) {
+		log.Warning.Printf("%s: user has already voted!\n", funcPrefix)
+		w.WriteHeader(200)
+		return
+	}
+
 	var params DoVotePrm
 	log.Debug.Printf("%s: decoding params...\n", funcPrefix)
 	err = json.NewDecoder(r.Body).Decode(&params)
