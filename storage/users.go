@@ -118,7 +118,7 @@ func GetUsers() ([]auth.User, error) {
 	log.Debug.Printf("%s: requesting users...\n", funcPrefix)
 	_, body, errs := gorequest.New().Get(endpoint).End()
 	if errs != nil {
-		log.Error.Printf("%s: getting users from Auth provider failed: %s\n", funcPrefix, err.Error())
+		log.Error.Printf("%s: getting users from Auth provider failed\n", funcPrefix)
 		return nil, errors.New("Can't get users from Auth provider")
 	}
 

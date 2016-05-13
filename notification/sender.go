@@ -98,7 +98,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	}
 
 	// used for getting VoteWithResult structure from Vote
-	res, error := storage.GetVoteResultStatus(*vote, *ownerUser)
+	res, error := storage.GetVoteResultStatus(vote, *ownerUser)
 	if error != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 	} 

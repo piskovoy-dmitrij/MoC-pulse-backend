@@ -3,7 +3,6 @@ package tcpsocket
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
@@ -49,7 +48,7 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 		users, _ := storage.GetUsers()
 		log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
 		for p, v := range users {
-			if user.Id == v.Id {
+			if s.user.Id == v.Id {
 				users = append(users[:p], users[p+1:]...)
 				log.Debug.Printf("%s: vote creator has been found and succesfully removed from the list\n", funcPrefix)
 				break
@@ -107,8 +106,8 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 		log.Error.Printf("%s: encoding result failed: %s\n", funcPrefix, err.Error())
 		return
 	}
-	packet := InitPacket(SC_GET_VOTE_RESULT, b.Bytes())
-	s.SendPacket(&packet)	
+	replyPacket := InitPacket(SC_GET_VOTE_RESULT, b.Bytes())
+	s.SendPacket(&replyPacket)	
 }
 
 func (s *TcpSocket) handleGetVotes(packet *PulsePacket) {
@@ -133,8 +132,8 @@ func (s *TcpSocket) handleGetVotes(packet *PulsePacket) {
 		log.Error.Printf("%s: encoding result failed: %s\n", funcPrefix, err.Error())
 		return
 	}
-	packet := InitPacket(SC_GET_VOTES_RESULT, b.Bytes())
-	s.SendPacket(&packet)
+	replyPacket := InitPacket(SC_GET_VOTES_RESULT, b.Bytes())
+	s.SendPacket(&replyPacket)
 }
 
 func (s *TcpSocket) handleVoteFor(packet *PulsePacket) {
@@ -153,11 +152,11 @@ func (s *TcpSocket) handleVoteFor(packet *PulsePacket) {
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, params.Id)
 	vote, err := storage.GetVote(params.Id)
 	if err != nil {
-		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, id, err.Error())
+		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, params.Id, err.Error())
 		return
 	}
 
-	if storage.isVotedByUser(*vote, s.user) {
+	if storage.IsVotedByUser(*vote, s.user) {
 		log.Warning.Printf("%s: user has already voted!\n", funcPrefix)
 		return
 	}
@@ -192,7 +191,7 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, authErr := auth.Authenticate(params.Token)
+	user, authErr := storage.Authenticate(params.Token)
 	if authErr != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		return
@@ -205,6 +204,6 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 		log.Error.Printf("%s: encoding result failed: %s\n", funcPrefix, err.Error())
 		return
 	}	
-	packet := InitPacket(SC_AUTH, b.Bytes())
-	s.SendPacket(&packet)
+	replyPacket := InitPacket(SC_AUTH, b.Bytes())
+	s.SendPacket(&replyPacket)
 }

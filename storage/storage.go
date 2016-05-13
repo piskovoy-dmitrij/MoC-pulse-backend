@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 	"gopkg.in/redis.v3"
 )
 
@@ -84,5 +86,40 @@ func LoadAuthToken(id string) (*auth.AuthToken, error) {
 		jsonString, _ := base64.StdEncoding.DecodeString(data)
 		json.Unmarshal([]byte(jsonString), at)
 		return at, nil
+	}
+}
+
+func Authenticate(token string) (*auth.User, error) {
+	funcPrefix := fmt.Sprintf("Token '%s' authentication", token)
+	log.Debug.Printf("%s: start\n", funcPrefix)
+	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	if token == "123123" {
+		u := &auth.User{
+			Id:     "debug",
+			Email:  "test@test.com",
+			Device: 2,
+			DevId:  "",
+		}
+		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, u)
+		return u, nil
+	}
+	at, err := LoadAuthToken(token)
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
+	info, err := at.GetTokenInfo()
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
+	user, err := LoadUser("user:" + info.Id)
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	} else {
+		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, user)
+		return user, nil
 	}
 }

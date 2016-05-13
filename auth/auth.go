@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
-	"fmt"
 
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 )
 
@@ -34,7 +32,7 @@ type AuthToken struct {
 	HMAC string // Base 64 encoded hmac
 }
 
-func NewAuthToken(user User, expiration_date time.Time, secret string) *AuthToken {
+func NewAuthToken(user User, expiration_date time.Time) *AuthToken {
 	at := &AuthToken{
 		Info: NewTokenInfo(user, expiration_date).ToBase64(),
 	}
@@ -57,7 +55,7 @@ func (at *AuthToken) verify(secret string) bool {
 	}
 }
 
-func (at *AuthToken) GetTokenInfo(secret string) (*TokenInfo, error) {
+func (at *AuthToken) GetTokenInfo() (*TokenInfo, error) {
 	funcPrefix := "Getting token info"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
@@ -97,7 +95,6 @@ func (ti *TokenInfo) ToBase64() string {
 	bytes, err := json.Marshal(ti)
 	if err != nil {
 		log.Error.Printf("Marshaling token info failed: %s\n", err.Error())
-		return nil		
 	}
 	return base64.StdEncoding.EncodeToString(bytes)
 }
@@ -107,39 +104,4 @@ func ComputeHmac256(message, secret string) string {
 	h := hmac.New(sha256.New, key)
 	h.Write([]byte(message))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
-}
-
-func Authenticate(token string) (*User, error) {
-	funcPrefix := fmt.Sprintf("Token '%s' authentication", token)
-	log.Debug.Printf("%s: start\n", funcPrefix)
-	defer log.Debug.Printf("%s: end\n", funcPrefix)
-
-	if token == "123123" {
-		u := &auth.User{
-			Id:     "debug",
-			Email:  "test@test.com",
-			Device: 2,
-			DevId:  "",
-		}
-		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, u)
-		return u, nil
-	}
-	at, err := storage.LoadAuthToken(token)
-	if err != nil {
-		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
-		return nil, err
-	}
-	info, err := at.GetTokenInfo(secret)
-	if err != nil {
-		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
-		return nil, err
-	}
-	user, err := storage.LoadUser("user:" + info.Id)
-	if err != nil {
-		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
-		return nil, err
-	} else {
-		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, user)
-		return user, nil
-	}
 }

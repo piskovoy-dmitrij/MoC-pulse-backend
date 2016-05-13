@@ -31,7 +31,7 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := auth.Authenticate(r.Header.Get("auth_token"))
+	user, error := storage.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -97,7 +97,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := auth.Authenticate(r.Header.Get("auth_token"))
+	user, error := storage.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -138,7 +138,7 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := auth.Authenticate(r.Header.Get("auth_token"))
+	user, error := storage.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -147,7 +147,7 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Debug.Printf("%s: getting all votes with results from storage...\n", funcPrefix)
 	votes, err := storage.GetAllVotesWithResult(*user)
 	if err != nil {
-		log.Error.Printf("%s: getting all votes with results from storage failed: %s\n", funcPrefix, id, err.Error())
+		log.Error.Printf("%s: getting all votes with results from storage failed: %s\n", funcPrefix, err.Error())
 		w.WriteHeader(400)
 		return
 	}
@@ -169,7 +169,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := auth.Authenticate(r.Header.Get("auth_token"))
+	user, error := storage.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -185,7 +185,7 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	if storage.isVotedByUser(*vote, *user) {
+	if storage.IsVotedByUser(*vote, *user) {
 		log.Warning.Printf("%s: user has already voted!\n", funcPrefix)
 		w.WriteHeader(200)
 		return
@@ -266,7 +266,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		}
 	}
 	log.Debug.Printf("%s: composing new auth token for user with id '%s'...\n", funcPrefix, id)
-	at := auth.NewAuthToken(*user, time.Now(), secret)
+	at := auth.NewAuthToken(*user, time.Now())
 
 	log.Debug.Printf("%s: saving user with id '%s' to storage...\n", funcPrefix, id)
 	storage.SaveUser(*user)
@@ -326,7 +326,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	token := r.FormValue("token")
 	log.Debug.Printf("%s: authenticating by token '%s' from request...\n", funcPrefix, token)
-	_, error := auth.Authenticate(token)
+	_, error := storage.Authenticate(token)
 	if error != nil {
 		log.Error.Printf("%s: authentication failed\n", funcPrefix)
 		w.WriteHeader(400)

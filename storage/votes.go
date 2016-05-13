@@ -163,18 +163,18 @@ func LoadVoteResult(id string) (*VoteResult, error) {
 	if err != nil {
 		return nil, errors.New("Not exist")
 	}
-	log.Debug.Printf("%s: unmarshaling vote...\n", funcPrefix)
+	log.Debug.Printf("%s: unmarshaling vote result...\n", funcPrefix)
 	voteResult := &VoteResult{}
-	err = json.Unmarshal(jsonString, &vote)
+	err = json.Unmarshal(jsonString, &voteResult)
 	if err != nil {
-		log.Error.Printf("%s: unmarshaling vote failed: %s\n", funcPrefix, err.Error())
+		log.Error.Printf("%s: unmarshaling vote result failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
 	return voteResult, nil
 }
 
-func isVotedByUser(vote Vote, user auth.User) bool {
+func IsVotedByUser(vote Vote, user auth.User) bool {
 	funcPrefix := "Checking if user has voted"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
@@ -239,7 +239,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 			Id:    vote.Id,
 			Owner: *ownerUser,
 			Date:  vote.Date,
-			Voted: isVotedByUser(vote, user),
+			Voted: IsVotedByUser(vote, user),
 			Result: Result{
 				Yellow:    yellow,
 				Green:     green,
