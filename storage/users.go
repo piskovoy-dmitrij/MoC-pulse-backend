@@ -153,5 +153,6 @@ func GetUsers() ([]auth.User, error) {
 }
 
 func UsersCount() int {
-	return cap(GetAllUsers())
+	users, _ := GetAllUsers()
+	return cap(users)
 }
