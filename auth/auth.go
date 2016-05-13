@@ -6,9 +6,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
+	"fmt"
+
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 )
+
+var secret string = "shjgfshfkjgskdfjgksfghks"
 
 type User struct {
 	Id        string `json:"id"`
@@ -53,36 +58,46 @@ func (at *AuthToken) verify(secret string) bool {
 }
 
 func (at *AuthToken) GetTokenInfo(secret string) (*TokenInfo, error) {
+	funcPrefix := "Getting token info"
+	log.Debug.Printf("%s: start\n", funcPrefix)
+	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
 	/* If the token is not valid, stop now. */
 	if !at.verify(secret) {
+		log.Error.Printf("%s: token is not valid\n", funcPrefix)
 		return nil, errors.New("The token is not valid.")
 	}
 
 	/* Convert from base64. */
 	jsonString, err := base64.StdEncoding.DecodeString(at.Info)
 	if err != nil {
-		log.Fatal("Failed to decode base64 string: ", err)
+		log.Error.Printf("%s: decoding base64 string failed: %s\n", funcPrefix, err.Error())
+		return nil, err
 	}
+
 	/* Unmarshal json object. */
 	var ti TokenInfo
+	log.Debug.Printf("%s: unmarshaling token info...\n", funcPrefix)
 	err = json.Unmarshal(jsonString, &ti)
 	if err != nil {
-		log.Fatal("Failed to decode TokenInfo: ", err)
+		log.Error.Printf("%s: unmarshaling token info failed: %s\n", funcPrefix, err.Error())
+		return nil, err
 	}
 
 	//	/* Check if the token is expired. */
 	//	if time.Now().Unix() > ti.ExpirationDate.Unix() {
+	//		log.Error.Printf("%s: token is expired\n", funcPrefix)
 	//		return nil, errors.New("The token is expired.")
-	//	} else {
-	//		return &ti, nil
 	//	}
+
 	return &ti, nil
 }
 
 func (ti *TokenInfo) ToBase64() string {
 	bytes, err := json.Marshal(ti)
 	if err != nil {
-		log.Panic("Failed to marshal TokenInfo.")
+		log.Error.Printf("Marshaling token info failed: %s\n", err.Error())
+		return nil		
 	}
 	return base64.StdEncoding.EncodeToString(bytes)
 }
@@ -92,4 +107,39 @@ func ComputeHmac256(message, secret string) string {
 	h := hmac.New(sha256.New, key)
 	h.Write([]byte(message))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
+
+func Authenticate(token string) (*User, error) {
+	funcPrefix := fmt.Sprintf("Token '%s' authentication", token)
+	log.Debug.Printf("%s: start\n", funcPrefix)
+	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	if token == "123123" {
+		u := &auth.User{
+			Id:     "debug",
+			Email:  "test@test.com",
+			Device: 2,
+			DevId:  "",
+		}
+		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, u)
+		return u, nil
+	}
+	at, err := storage.LoadAuthToken(token)
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
+	info, err := at.GetTokenInfo(secret)
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
+	user, err := storage.LoadUser("user:" + info.Id)
+	if err != nil {
+		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
+		return nil, err
+	} else {
+		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, user)
+		return user, nil
+	}
 }

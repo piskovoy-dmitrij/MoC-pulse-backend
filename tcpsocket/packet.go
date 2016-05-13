@@ -1,12 +1,12 @@
 package tcpsocket
 
-type PulsePucket struct {
+type PulsePacket struct {
 	opcode  uint16
 	size    uint32
 	content []byte
 }
 
-func (p *PulsePucket) ToSlice() []byte {
+func (p *PulsePacket) ToSlice() []byte {
 	oBuf := make([]byte, 2)
 	sBuf := make([]byte, 4)
 
@@ -26,24 +26,24 @@ func (p *PulsePucket) ToSlice() []byte {
 	return result
 }
 
-func InitPacket(opcode uint16, content []byte) PulsePucket {
-	p := PulsePucket{}
+func InitPacket(opcode uint16, content []byte) PulsePacket {
+	p := PulsePacket{}
 	p.content = content
 	p.opcode = opcode
 	p.size = uint32(len(content))
 	return p
 }
 
-func InitEmptyPacket(opcode uint16) PulsePucket {
-	p := PulsePucket{}
+func InitEmptyPacket(opcode uint16) PulsePacket {
+	p := PulsePacket{}
 	p.content = make([]byte, 0)
 	p.opcode = opcode
 	p.size = uint32(len(p.content))
 	return p
 }
 
-func InitPacketWithHeaderData(header []byte) PulsePucket {
-	p := PulsePucket{}
+func InitPacketWithHeaderData(header []byte) PulsePacket {
+	p := PulsePacket{}
 
 	p.opcode = uint16(header[0])<<8 | uint16(header[1])
 	p.size = uint32(header[2])<<24 | uint32(header[3])<<16 | uint32(header[4])<<8 | uint32(header[5])

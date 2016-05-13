@@ -4,7 +4,7 @@ import (
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
-	"log"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 	"net"
 	"os"
 )
@@ -18,7 +18,7 @@ type TcpSocket struct {
 	conection *net.Conn
 }
 
-func (s *TcpSocket) SendPacket(p *PulsePucket) {
+func (s *TcpSocket) SendPacket(p *PulsePacket) {
 	(*s.conection).Write(p.ToSlice())
 }
 
@@ -26,11 +26,9 @@ func ListenAndServer(host string, ns *notification.Sender) {
 	notificationSender = ns
 	l, err := net.Listen("tcp", host)
 	if err != nil {
-		log.Println("TcpSocket Error listening:", err.Error())
+		log.Error.Printf("TcpSocket Error listening: %s\n", err.Error())
 		os.Exit(1)
 	}
-
-	println("Starting tcp server...")
 
 	defer l.Close()
 
@@ -44,7 +42,7 @@ func ListenAndServer(host string, ns *notification.Sender) {
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			log.Println("TcpSocket Error accepting: ", err.Error())
+			log.Error.Printf("TcpSocket Error accepting: %s\n", err.Error())
 			os.Exit(1)
 		}
 
@@ -53,6 +51,9 @@ func ListenAndServer(host string, ns *notification.Sender) {
 }
 
 func HandleNewConnection(c net.Conn) {
+	funcPrefix := "Handling new connection"
+	log.Debug.Printf("%s: start\n", funcPrefix)
+	defer log.Debug.Printf("%s: end\n", funcPrefix)
 	s := TcpSocket{conection: &c}
 
 	// closing in ListenToEvents()
@@ -62,11 +63,14 @@ func HandleNewConnection(c net.Conn) {
 
 	go s.ListenToEvents()
 
+	log.Debug.Printf("%s: sending new socket connection event...\n", funcPrefix)
 	*events.GetNewSocketsChan() <- events.NewSocketEvent{&s.SomeSocket}
 
 	defer ConnectionClosed(&s)
+	defer log.Debug.Printf("%s: closing connection...\n", funcPrefix)
 
 	// read
+	log.Debug.Printf("%s: start reading packets from socket connection\n", funcPrefix)
 	for {
 		header := make([]byte, 6)
 		headerLen, err := c.Read(header)
@@ -84,8 +88,9 @@ func HandleNewConnection(c net.Conn) {
 			packet.content = content
 		}
 
-		s.ProccesPacket(&packet)
+		s.ProcessPacket(&packet)
 	}
+	log.Debug.Printf("%s: finish reading packets from socket connection\n", funcPrefix)	
 }
 
 func ConnectionClosed(s *TcpSocket) {
