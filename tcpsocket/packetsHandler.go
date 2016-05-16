@@ -200,7 +200,7 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 
 	var b bytes.Buffer
 	err = json.NewEncoder(&b).Encode(s.user)
-	if err == nil {
+	if err != nil {
 		log.Error.Printf("%s: encoding result failed: %s\n", funcPrefix, err.Error())
 		return
 	}	

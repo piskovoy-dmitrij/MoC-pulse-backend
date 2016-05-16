@@ -77,6 +77,7 @@ func ConnectToRedis() *redis.Client {
 
 func LoadAuthToken(id string) (*auth.AuthToken, error) {
 	client := ConnectToRedis()
+	defer client.Close()
 
 	data, err := client.Get(id).Result()
 	if err != nil {
