@@ -1,5 +1,3 @@
-db = 'localhost'
-
 # Log levels:
 # DEBUG = 4 
 # INFO = 3
@@ -9,6 +7,8 @@ db = 'localhost'
 
 LogLevel = 4
 LogPath = 'MoC-pulse-backend.log'
+
+DbConnectionAddress = 'localhost:6379'
 
 HttpRouterPort = 3001
 TcpSocketPort = 4242

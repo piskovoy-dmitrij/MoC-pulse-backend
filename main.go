@@ -18,6 +18,8 @@ var cfg *mini.Config
 
 const cfgPath string = ".pulseconfigrc"
 
+var dbConnectionAddress string
+
 func main() {
 
 	var err error
@@ -26,6 +28,8 @@ func main() {
 	if err != nil {
 		syslog.Fatalf("Failed to open configuration file %s!\n", cfgPath)
 	}
+
+	dbConnectionAddress = cfg.String("DbConnectionAddress", "localhost:6379")
 
 	log.NewLogger(
 		cfg.Integer("LogLevel", 0),
