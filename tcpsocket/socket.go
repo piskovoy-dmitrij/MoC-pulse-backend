@@ -15,11 +15,11 @@ type TcpSocket struct {
 	events.SomeSocket
 
 	user      auth.User
-	conection *net.Conn
+	connection *net.Conn
 }
 
 func (s *TcpSocket) SendPacket(p *PulsePacket) {
-	(*s.conection).Write(p.ToSlice())
+	(*s.connection).Write(p.ToSlice())
 }
 
 func ListenAndServer(host string, ns *notification.Sender) {
@@ -54,7 +54,7 @@ func HandleNewConnection(c net.Conn) {
 	funcPrefix := "Handling new connection"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
-	s := TcpSocket{conection: &c}
+	s := TcpSocket{connection: &c}
 
 	// closing in ListenToEvents()
 	s.SomeSocket.NewVoteEvent = make(chan *events.NewVoteEvent)
