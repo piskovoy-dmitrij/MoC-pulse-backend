@@ -184,10 +184,10 @@ func IsVotedByUser(vote Vote, user auth.User) bool {
 
 	_, err := client.Get("result:" + vote.Id + ":" + user.Id).Result()
 	if err != nil {
-		log.Debug.Printf("%s: user '%s' has not voted in vote with id '%d' yet\n", user.Id, vote.Id, funcPrefix)
+		log.Debug.Printf("%s: user '%s' has not voted in vote with id '%s' yet\n", funcPrefix, user.Id, vote.Id)
 		return false
 	} else {
-		log.Debug.Printf("%s: user '%s' has already voted in vote with id '%d'\n", user.Id, vote.Id, funcPrefix)
+		log.Debug.Printf("%s: user '%s' has already voted in vote with id '%s'\n", funcPrefix, user.Id, vote.Id)
 		return true
 	}
 }
