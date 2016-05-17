@@ -29,6 +29,9 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	var params CSCreateVoteRequest
 	log.Debug.Printf("%s: unmarshaling params...\n", funcPrefix)
 	err := json.Unmarshal(packet.content, &params)
@@ -38,15 +41,18 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: adding new vote to storage...\n", funcPrefix)
-	vote, err1 := storage.NewVote(params.Name, s.user.Id)
+	vote, err1 := storageConnection.NewVote(params.Name, s.user.Id)
 	if err1 != nil {
 		log.Error.Printf("%s: adding vote '%s' to storage failed: %s\n", funcPrefix, params.Name, err.Error())
 		return
 	}
 
 	go func() {
+		conn := storage.NewStorageConnection(dbConnectionAddress)
+		defer conn.CloseStorageConnection()
+
 		log.Debug.Printf("%s: getting users from storage...\n", funcPrefix)
-		users, _ := storage.GetUsers()
+		users, _ := conn.GetUsers()
 		log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
 		for p, v := range users {
 			if s.user.Id == v.Id {
@@ -56,11 +62,11 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 			}
 		}
 		log.Debug.Printf("%s: sending notifications to users...\n", funcPrefix)
-		notificationSender.Send(users, *vote)
+		notificationSender.Send(users, *vote, dbConnectionAddress)
 	}()
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err2 := storage.GetVoteResultStatus(*vote, s.user)
+	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user)
 	if err2 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
@@ -77,6 +83,9 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	var params CSGetVoteRequest
 	log.Debug.Printf("%s: unmarshaling params...\n", funcPrefix)
 	err := json.Unmarshal(packet.content, &params)
@@ -86,7 +95,7 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, params.Id)
-	vote, err1 := storage.GetVote(params.Id)
+	vote, err1 := storageConnection.GetVote(params.Id)
 	if err1 != nil {
 		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, params.Id, err.Error())
 		return
@@ -95,7 +104,7 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 	log.Info.Printf("%s: vote was successfully found: [%+v]\n", funcPrefix, vote)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err2 := storage.GetVoteResultStatus(*vote, s.user)
+	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user)
 	if err2 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
@@ -116,8 +125,11 @@ func (s *TcpSocket) handleGetVotes(packet *PulsePacket) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: getting all votes with results from storage...\n", funcPrefix)
-	votes, err := storage.GetAllVotesWithResult(s.user)
+	votes, err := storageConnection.GetAllVotesWithResult(s.user)
 	if err != nil {
 		log.Error.Printf("%s: getting all votes with results from storage failed: %s\n", funcPrefix, err.Error())
 		return
@@ -142,6 +154,9 @@ func (s *TcpSocket) handleVoteFor(packet *PulsePacket) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	var params CSVoteForRequest
 	log.Debug.Printf("%s: unmarshaling params...\n", funcPrefix)
 	err := json.Unmarshal(packet.content, &params)
@@ -151,22 +166,22 @@ func (s *TcpSocket) handleVoteFor(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, params.Id)
-	vote, err := storage.GetVote(params.Id)
+	vote, err := storageConnection.GetVote(params.Id)
 	if err != nil {
 		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, params.Id, err.Error())
 		return
 	}
 
-	if storage.IsVotedByUser(*vote, s.user) {
+	if storageConnection.IsVotedByUser(*vote, s.user) {
 		log.Warning.Printf("%s: user has already voted!\n", funcPrefix)
 		return
 	}
 
 	log.Debug.Printf("%s: modifying vote...\n", funcPrefix)
-	storage.VoteProcessing(*vote, s.user, params.ColorId)
+	storageConnection.VoteProcessing(*vote, s.user, params.ColorId)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err1 := storage.GetVoteResultStatus(*vote, s.user)
+	res, err1 := storageConnection.GetVoteResultStatus(*vote, s.user)
 	if err1 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
@@ -183,6 +198,9 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	var params CSAuthRequest
 	log.Debug.Printf("%s: unmarshaling params...\n", funcPrefix)
 	err := json.Unmarshal(packet.content, &params)
@@ -192,7 +210,7 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, authErr := storage.Authenticate(params.Token)
+	user, authErr := storageConnection.Authenticate(params.Token)
 	if authErr != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		return

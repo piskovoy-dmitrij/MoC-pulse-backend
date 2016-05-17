@@ -12,16 +12,10 @@ import (
 
 var endpoint string = "https://id.masterofcode.com/api/trusted/profiles.json?name=PulsePush&token=1-K_I6DY1QbNknp-MXHN4QDhTmD1BQCgyesCoHfZExzABKdwvKOenIcisq7UubPprAcnZBrpP4qmu-j-nzlH_F8A"
 
-type UserInterface interface {
-}
-
-func SaveUser(user auth.User) {
+func (this *StorageConnection) SaveUser(user auth.User) {
 	funcPrefix := "Saving user to storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
-
-	client := ConnectToRedis()
-	defer client.Close()
 
 	log.Debug.Printf("%s: marshaling user...\n", funcPrefix)
 	serialized, err := json.Marshal(user)
@@ -29,19 +23,16 @@ func SaveUser(user auth.User) {
 		log.Error.Printf("%s: marshaling user failed: %s\n", funcPrefix, err.Error())
 		return
 	}
-	err = client.Set("user:"+user.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+	err = this.client.Set("user:"+user.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 	if err != nil {
 		log.Error.Printf("%s: inserting user failed: %s\n", funcPrefix, err.Error())
 	}
 }
 
-func SaveAuthToken(at auth.AuthToken) {
+func (this *StorageConnection) SaveAuthToken(at auth.AuthToken) {
 	funcPrefix := "Saving auth token to storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
-
-	client := ConnectToRedis()
-	defer client.Close()
 
 	log.Debug.Printf("%s: marshaling auth token...\n", funcPrefix)
 	serialized, err := json.Marshal(at)
@@ -49,22 +40,19 @@ func SaveAuthToken(at auth.AuthToken) {
 		log.Error.Printf("%s: marshaling auth token failed: %s\n", funcPrefix, err.Error())
 		return
 	}
-	err = client.Set(at.HMAC, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+	err = this.client.Set(at.HMAC, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 	if err != nil {
 		log.Error.Printf("%s: inserting auth token failed: %s\n", funcPrefix, err.Error())
 	}
 }
 
-func GetAllUsers() ([]auth.User, error) {
+func (this *StorageConnection) GetAllUsers() ([]auth.User, error) {
 	funcPrefix := "Getting all users from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting user keys...\n", funcPrefix)
-	users_keys, err := client.Keys("user:*").Result()
+	users_keys, err := this.client.Keys("user:*").Result()
 	if err != nil {
 		log.Error.Printf("%s: getting user keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -74,7 +62,7 @@ func GetAllUsers() ([]auth.User, error) {
 
 	log.Debug.Printf("%s: getting each user by key...\n", funcPrefix)
 	for _, value := range users_keys {
-		item, err := LoadUser(value)
+		item, err := this.LoadUser(value)
 		if err == nil {
 			users = append(users, *item)
 		}
@@ -83,16 +71,13 @@ func GetAllUsers() ([]auth.User, error) {
 	return users, nil
 }
 
-func LoadUser(id string) (*auth.User, error) {
+func (this *StorageConnection) LoadUser(id string) (*auth.User, error) {
 	funcPrefix := "Getting user from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting user...\n", funcPrefix)
-	data, err := client.Get(id).Result()
+	data, err := this.client.Get(id).Result()
 	if err != nil {
 		log.Error.Printf("%s: getting user failed: %s\n", funcPrefix, err.Error())
 		return nil, errors.New("Not exist")
@@ -110,7 +95,7 @@ func LoadUser(id string) (*auth.User, error) {
 	return user, nil
 }
 
-func GetUsers() ([]auth.User, error) {
+func (this *StorageConnection) GetUsers() ([]auth.User, error) {
 	funcPrefix := "Getting users with auth"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
@@ -130,7 +115,7 @@ func GetUsers() ([]auth.User, error) {
 		return nil, err
 	}
 
-	exist_users, err := GetAllUsers()
+	exist_users, err := this.GetAllUsers()
 
 	var user_keys map[string]auth.User = map[string]auth.User{}
 
@@ -152,7 +137,7 @@ func GetUsers() ([]auth.User, error) {
 	return users, nil
 }
 
-func UsersCount() int {
-	users, _ := GetAllUsers()
+func (this *StorageConnection) UsersCount() int {
+	users, _ := this.GetAllUsers()
 	return cap(users)
 }

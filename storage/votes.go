@@ -11,13 +11,10 @@ import (
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 )
 
-func NewVote(name string, owner string) (*Vote, error) {
+func (this *StorageConnection) NewVote(name string, owner string) (*Vote, error) {
 	funcPrefix := "Inserting new vote to storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
-
-	client := ConnectToRedis()
-	defer client.Close()
 
 	id := strconv.FormatInt(time.Now().UnixNano(), 10)
 
@@ -35,7 +32,7 @@ func NewVote(name string, owner string) (*Vote, error) {
 		log.Error.Printf("%s: marshaling vote failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
-	err = client.Set("vote:"+id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+	err = this.client.Set("vote:"+id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 	if err != nil {
 		log.Error.Printf("%s: inserting vote failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -44,20 +41,17 @@ func NewVote(name string, owner string) (*Vote, error) {
 	return vote, nil
 }
 
-func GetVote(id string) (*Vote, error) {
-	return LoadVote("vote:" + id)
+func (this *StorageConnection) GetVote(id string) (*Vote, error) {
+	return this.LoadVote("vote:" + id)
 }
 
-func LoadVote(id string) (*Vote, error) {
+func (this *StorageConnection) LoadVote(id string) (*Vote, error) {
 	funcPrefix := "Getting vote from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting vote...\n", funcPrefix)
-	val, err := client.Get(id).Result()
+	val, err := this.client.Get(id).Result()
 	if err != nil {
 		log.Error.Printf("%s: getting vote failed: %s\n", funcPrefix, err.Error())
 		return nil, errors.New("Not found")
@@ -75,16 +69,13 @@ func LoadVote(id string) (*Vote, error) {
 	return &vote, nil
 }
 
-func GetAllVotesWithResult(user auth.User) ([]VoteWithResult, error) {
+func (this *StorageConnection) GetAllVotesWithResult(user auth.User) ([]VoteWithResult, error) {
 	funcPrefix := "Getting all votes from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting vote keys...\n", funcPrefix)
-	votes_keys, err := client.Keys("vote:*").Result()
+	votes_keys, err := this.client.Keys("vote:*").Result()
 	if err != nil {
 		log.Error.Printf("%s: getting vote keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -94,9 +85,9 @@ func GetAllVotesWithResult(user auth.User) ([]VoteWithResult, error) {
 
 	log.Debug.Printf("%s: getting results of each vote by key...\n", funcPrefix)
 	for _, value := range votes_keys {
-		vote, error := LoadVote(value)
+		vote, error := this.LoadVote(value)
 		if error == nil {
-			item, error2 := GetVoteResultStatus(*vote, user)
+			item, error2 := this.GetVoteResultStatus(*vote, user)
 			if error2 == nil {
 				votes = append(votes, item.Vote)
 			}
@@ -106,19 +97,16 @@ func GetAllVotesWithResult(user auth.User) ([]VoteWithResult, error) {
 	return votes, nil
 }
 
-func VoteProcessing(vote Vote, user auth.User, value int) error {
-	voteResult := NewResult(vote, user, value)
+func (this *StorageConnection) VoteProcessing(vote Vote, user auth.User, value int) error {
+	voteResult := newResult(vote, user, value)
 
-	return SaveResult(voteResult)
+	return this.SaveResult(voteResult)
 }
 
-func SaveResult(result *VoteResult) error {
+func (this *StorageConnection) SaveResult(result *VoteResult) error {
 	funcPrefix := "Saving result to storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
-
-	client := ConnectToRedis()
-	defer client.Close()
 
 	log.Debug.Printf("%s: marshaling result...\n", funcPrefix)
 	serialized, err := json.Marshal(result)
@@ -127,7 +115,7 @@ func SaveResult(result *VoteResult) error {
 		log.Error.Printf("%s: marshaling result failed: %s\n", funcPrefix, err.Error())
 		return err
 	}
-	err = client.Set("result:"+result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+	err = this.client.Set("result:"+result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 	if err != nil {
 		log.Error.Printf("%s: inserting result failed: %s\n", funcPrefix, err.Error())
 		return err
@@ -136,7 +124,7 @@ func SaveResult(result *VoteResult) error {
 	return nil
 }
 
-func NewResult(vote Vote, user auth.User, value int) *VoteResult {
+func newResult(vote Vote, user auth.User, value int) *VoteResult {
 	return &VoteResult{
 		Id:    vote.Id + ":" + user.Id,
 		Value: value,
@@ -145,16 +133,13 @@ func NewResult(vote Vote, user auth.User, value int) *VoteResult {
 	}
 }
 
-func LoadVoteResult(id string) (*VoteResult, error) {
+func (this *StorageConnection) LoadVoteResult(id string) (*VoteResult, error) {
 	funcPrefix := "Getting result from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting result...\n", funcPrefix)
-	data, err := client.Get(id).Result()
+	data, err := this.client.Get(id).Result()
 	if err != nil {
 		log.Error.Printf("%s: getting result failed: %s\n", funcPrefix, err.Error())
 		return nil, errors.New("Not exist")
@@ -175,15 +160,12 @@ func LoadVoteResult(id string) (*VoteResult, error) {
 	return voteResult, nil
 }
 
-func IsVotedByUser(vote Vote, user auth.User) bool {
+func (this *StorageConnection) IsVotedByUser(vote Vote, user auth.User) bool {
 	funcPrefix := "Checking if user has voted"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
-	_, err := client.Get("result:" + vote.Id + ":" + user.Id).Result()
+	_, err := this.client.Get("result:" + vote.Id + ":" + user.Id).Result()
 	if err != nil {
 		log.Debug.Printf("%s: user '%s' has not voted in vote with id '%s' yet\n", funcPrefix, user.Id, vote.Id)
 		return false
@@ -193,16 +175,13 @@ func IsVotedByUser(vote Vote, user auth.User) bool {
 	}
 }
 
-func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
+func (this *StorageConnection) GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 	funcPrefix := "Getting vote result status from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
-	client := ConnectToRedis()
-	defer client.Close()
-
 	log.Debug.Printf("%s: getting vote result keys...\n", funcPrefix)
-	results_keys, err := client.Keys("result:" + vote.Id + ":*").Result()
+	results_keys, err := this.client.Keys("result:" + vote.Id + ":*").Result()
 	if err != nil {
 		log.Error.Printf("%s: getting vote result keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -214,7 +193,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 
 	log.Debug.Printf("%s: getting vote result by result key...\n", funcPrefix)
 	for _, value := range results_keys {
-		item, err := LoadVoteResult(value)
+		item, err := this.LoadVoteResult(value)
 
 		if err == nil {
 			if item.Value == 0 {
@@ -228,7 +207,7 @@ func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 	}
 
 	log.Debug.Printf("%s: getting vote owner...\n", funcPrefix)
-	ownerUser, error := LoadUser("user:" + vote.Owner)
+	ownerUser, error := this.LoadUser("user:" + vote.Owner)
 	if error != nil {
 		log.Error.Printf("%s: getting vote owner failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -240,12 +219,12 @@ func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 			Id:    vote.Id,
 			Owner: *ownerUser,
 			Date:  vote.Date,
-			Voted: IsVotedByUser(vote, user),
+			Voted: this.IsVotedByUser(vote, user),
 			Result: Result{
 				Yellow:    yellow,
 				Green:     green,
 				Red:       red,
-				AllUsers:  UsersCount(),
+				AllUsers:  this.UsersCount(),
 				VoteUsers: yellow + green + red,
 			},
 		},

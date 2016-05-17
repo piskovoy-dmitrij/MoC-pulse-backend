@@ -70,5 +70,5 @@ func main() {
 
 	tcpsocketPort := cfg.Integer("TcpSocketPort", 4242)
 	log.Debug.Printf("Starting tcpsocket server on port %d...\n", tcpsocketPort)
-	tcpsocket.ListenAndServer(":"+strconv.FormatInt(tcpsocketPort, 10), notificationSender)
+	tcpsocket.ListenAndServer(":"+strconv.FormatInt(tcpsocketPort, 10), notificationSender, dbConnectionAddress)
 }

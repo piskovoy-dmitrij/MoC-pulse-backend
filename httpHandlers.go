@@ -30,8 +30,12 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	funcPrefix := "New vote creation"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := storage.Authenticate(r.Header.Get("auth_token"))
+	user, error := storageConnection.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -48,15 +52,18 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	log.Debug.Printf("%s: adding new vote to storage...\n", funcPrefix)
-	vote, err := storage.NewVote(params.Name, user.Id)
+	vote, err := storageConnection.NewVote(params.Name, user.Id)
 	if err != nil {
 		log.Error.Printf("%s: adding vote '%s' to storage failed: %s\n", funcPrefix, params.Name, err.Error())
 		return
 	}
 
 	go func() {
+		conn := storage.NewStorageConnection(dbConnectionAddress)
+		defer conn.CloseStorageConnection()
+
 		log.Debug.Printf("%s: getting users from storage...\n", funcPrefix)
-		users, _ := storage.GetUsers()
+		users, _ := conn.GetUsers()
 		log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
 		for p, v := range users {
 			if user.Id == v.Id {
@@ -66,11 +73,11 @@ func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			}
 		}
 		log.Debug.Printf("%s: sending notifications to users...\n", funcPrefix)
-		notificationSender.Send(users, *vote)
+		notificationSender.Send(users, *vote, dbConnectionAddress)
 	}()
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err := storage.GetVoteResultStatus(*vote, *user)
+	res, err := storageConnection.GetVoteResultStatus(*vote, *user)
 	if err != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		w.WriteHeader(400)
@@ -96,8 +103,12 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	funcPrefix := "Getting vote results"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := storage.Authenticate(r.Header.Get("auth_token"))
+	user, error := storageConnection.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -106,7 +117,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id := ps.ByName("id")
 
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, id)
-	vote, err := storage.GetVote(id)
+	vote, err := storageConnection.GetVote(id)
 	if err != nil {
 		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, id, err.Error())
 		w.WriteHeader(400)
@@ -116,7 +127,7 @@ func getVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Info.Printf("%s: vote was successfully found: [%+v]\n", funcPrefix, vote)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err := storage.GetVoteResultStatus(*vote, *user)
+	res, err := storageConnection.GetVoteResultStatus(*vote, *user)
 	if err != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		w.WriteHeader(400)
@@ -137,15 +148,19 @@ func getVotes(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	funcPrefix := "Getting all votes with results"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := storage.Authenticate(r.Header.Get("auth_token"))
+	user, error := storageConnection.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
 		return
 	}
 	log.Debug.Printf("%s: getting all votes with results from storage...\n", funcPrefix)
-	votes, err := storage.GetAllVotesWithResult(*user)
+	votes, err := storageConnection.GetAllVotesWithResult(*user)
 	if err != nil {
 		log.Error.Printf("%s: getting all votes with results from storage failed: %s\n", funcPrefix, err.Error())
 		w.WriteHeader(400)
@@ -168,8 +183,12 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	funcPrefix := "Processing voting"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: authenticating user...\n", funcPrefix)
-	user, error := storage.Authenticate(r.Header.Get("auth_token"))
+	user, error := storageConnection.Authenticate(r.Header.Get("auth_token"))
 	if error != nil {
 		log.Error.Printf("%s: user authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -178,14 +197,14 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	id := ps.ByName("id")
 
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, id)
-	vote, err := storage.GetVote(id)
+	vote, err := storageConnection.GetVote(id)
 	if err != nil {
 		log.Error.Printf("%s: getting vote with id '%s' from storage failed: %s\n", funcPrefix, id, err.Error())
 		w.WriteHeader(400)
 		return
 	}
 
-	if storage.IsVotedByUser(*vote, *user) {
+	if storageConnection.IsVotedByUser(*vote, *user) {
 		log.Warning.Printf("%s: user has already voted!\n", funcPrefix)
 		w.WriteHeader(200)
 		return
@@ -201,10 +220,10 @@ func doVote(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	}
 
 	log.Debug.Printf("%s: modifying vote...\n", funcPrefix)
-	storage.VoteProcessing(*vote, *user, params.Value)
+	storageConnection.VoteProcessing(*vote, *user, params.Value)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err := storage.GetVoteResultStatus(*vote, *user)
+	res, err := storageConnection.GetVoteResultStatus(*vote, *user)
 	if err != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		w.WriteHeader(400)
@@ -230,6 +249,10 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	funcPrefix := "Registering new user"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	log.Debug.Printf("%s: getting params from request...\n", funcPrefix)
 	id := r.PostFormValue("id")
 	email := r.PostFormValue("email")
@@ -246,7 +269,7 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	log.Debug.Printf("%s: checking existence of user with id '%s'...\n", funcPrefix, id)
-	user, err := storage.LoadUser("user:" + id)
+	user, err := storageConnection.LoadUser("user:" + id)
 	if err == nil {
 		log.Debug.Printf("%s: user with id '%s' already exists; modifying his params...\n", funcPrefix, id)
 		user.Device = device
@@ -269,9 +292,9 @@ func registerUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	at := auth.NewAuthToken(*user, time.Now())
 
 	log.Debug.Printf("%s: saving user with id '%s' to storage...\n", funcPrefix, id)
-	storage.SaveUser(*user)
+	storageConnection.SaveUser(*user)
 
-	storage.SaveAuthToken(*at)
+	storageConnection.SaveAuthToken(*at)
 
 	log.Info.Printf("%s: user has been succesfully registered: [%+v]\n", funcPrefix, user)
 
@@ -292,11 +315,12 @@ func testIOSNotificationSending(w http.ResponseWriter, r *http.Request, _ httpro
 	funcPrefix := "iOS notification sending test"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
 	log.Debug.Printf("%s: getting dev_id from request...\n", funcPrefix)
 	dev_id := r.PostFormValue("dev_id")
 	if dev_id != "" {
 		log.Info.Printf("%s: trying to send notification for dev_id '%s'...\n", funcPrefix, dev_id)
-		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
+		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 0, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"}, dbConnectionAddress)
 		w.WriteHeader(200)
 	} else {
 		log.Warning.Printf("%s: there is no dev_id in request!\n", funcPrefix)
@@ -308,11 +332,12 @@ func testAndroidNotificationSending(w http.ResponseWriter, r *http.Request, _ ht
 	funcPrefix := "Android notification sending test"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
 	log.Debug.Printf("%s: getting dev_id from request...\n", funcPrefix)
 	dev_id := r.PostFormValue("dev_id")
 	if dev_id != "" {
 		log.Info.Printf("%s: trying to send notification for dev_id '%s'...\n", funcPrefix, dev_id)
-		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 1, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"})
+		notificationSender.Send([]auth.User{auth.User{Id: "100", FirstName: "John", LastName: "Doe", Device: 1, DevId: dev_id}}, storage.Vote{Id: "5", Name: "HelloWorld", Date: 1436966974, Voted: true, Owner: "test"}, dbConnectionAddress)
 		w.WriteHeader(200)
 	} else {
 		log.Warning.Printf("%s: there is no dev_id in request!\n", funcPrefix)
@@ -324,9 +349,13 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	funcPrefix := "Processing email voting"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
+	defer storageConnection.CloseStorageConnection()
+
 	token := r.FormValue("token")
 	log.Debug.Printf("%s: authenticating by token '%s' from request...\n", funcPrefix, token)
-	_, error := storage.Authenticate(token)
+	_, error := storageConnection.Authenticate(token)
 	if error != nil {
 		log.Error.Printf("%s: authentication failed\n", funcPrefix)
 		w.WriteHeader(400)
@@ -334,7 +363,7 @@ func emailVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	id := r.PostFormValue("vote")
 	log.Debug.Printf("%s: getting vote with id '%s' from storage...\n", funcPrefix, id)
-	vote, _ := storage.GetVote(id)
+	vote, _ := storageConnection.GetVote(id)
 	value, _ := strconv.Atoi(r.PostFormValue("value"))
 	log.Debug.Printf("%s: modifying vote...\n", funcPrefix)
 	res := storage.DoVoteStatus{

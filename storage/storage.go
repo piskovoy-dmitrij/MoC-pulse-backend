@@ -11,6 +11,10 @@ import (
 	"gopkg.in/redis.v3"
 )
 
+type StorageConnection struct {
+	client *redis.Client
+}
+
 type Vote struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
@@ -65,21 +69,21 @@ type DoVote struct {
 	Value int    `json:"value"`
 }
 
-func ConnectToRedis() *redis.Client {
+func NewStorageConnection(address string) *StorageConnection {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     address,
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-
-	return client
+	return &StorageConnection{client}
 }
 
-func LoadAuthToken(id string) (*auth.AuthToken, error) {
-	client := ConnectToRedis()
-	defer client.Close()
+func (this *StorageConnection) CloseStorageConnection() {
+	this.client.Close()
+}
 
-	data, err := client.Get(id).Result()
+func (this *StorageConnection) LoadAuthToken(id string) (*auth.AuthToken, error) {
+	data, err := this.client.Get(id).Result()
 	if err != nil {
 		return nil, errors.New("Not exist")
 	} else {
@@ -90,7 +94,7 @@ func LoadAuthToken(id string) (*auth.AuthToken, error) {
 	}
 }
 
-func Authenticate(token string) (*auth.User, error) {
+func (this *StorageConnection) Authenticate(token string) (*auth.User, error) {
 	funcPrefix := fmt.Sprintf("Token '%s' authentication", token)
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
@@ -105,7 +109,7 @@ func Authenticate(token string) (*auth.User, error) {
 		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, u)
 		return u, nil
 	}
-	at, err := LoadAuthToken(token)
+	at, err := this.LoadAuthToken(token)
 	if err != nil {
 		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -115,7 +119,7 @@ func Authenticate(token string) (*auth.User, error) {
 		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
-	user, err := LoadUser("user:" + info.Id)
+	user, err := this.LoadUser("user:" + info.Id)
 	if err != nil {
 		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
 		return nil, err

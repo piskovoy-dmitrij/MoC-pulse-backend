@@ -12,6 +12,8 @@ import (
 
 var notificationSender *notification.Sender
 
+var dbConnectionAddress string
+
 type TcpSocket struct {
 	events.SomeSocket
 
@@ -23,8 +25,10 @@ func (s *TcpSocket) SendPacket(p *PulsePacket) {
 	(*s.connection).Write(p.ToSlice())
 }
 
-func ListenAndServer(host string, ns *notification.Sender) {
+func ListenAndServer(host string, ns *notification.Sender, dbconn string) {
 	notificationSender = ns
+	dbConnectionAddress = dbconn
+
 	l, err := net.Listen("tcp", host)
 	if err != nil {
 		log.Error.Printf("TcpSocket Error listening: %s\n", err.Error())
