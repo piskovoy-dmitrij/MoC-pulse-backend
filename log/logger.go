@@ -1,9 +1,9 @@
 package log
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
-	"io/ioutil"
 )
 
 var Error *log.Logger

@@ -3,6 +3,7 @@ package tcpsocket
 import (
 	"bytes"
 	"encoding/json"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/storage"
@@ -37,7 +38,7 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 	}
 
 	log.Debug.Printf("%s: adding new vote to storage...\n", funcPrefix)
-	vote, err1 := storage.NewVote(params.Name, s.user.Id)	
+	vote, err1 := storage.NewVote(params.Name, s.user.Id)
 	if err1 != nil {
 		log.Error.Printf("%s: adding vote '%s' to storage failed: %s\n", funcPrefix, params.Name, err.Error())
 		return
@@ -107,7 +108,7 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 		return
 	}
 	replyPacket := InitPacket(SC_GET_VOTE_RESULT, b.Bytes())
-	s.SendPacket(&replyPacket)	
+	s.SendPacket(&replyPacket)
 }
 
 func (s *TcpSocket) handleGetVotes(packet *PulsePacket) {
@@ -203,7 +204,7 @@ func (s *TcpSocket) handleAuth(packet *PulsePacket) {
 	if err != nil {
 		log.Error.Printf("%s: encoding result failed: %s\n", funcPrefix, err.Error())
 		return
-	}	
+	}
 	replyPacket := InitPacket(SC_AUTH, b.Bytes())
 	s.SendPacket(&replyPacket)
 }

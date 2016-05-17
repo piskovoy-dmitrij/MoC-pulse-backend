@@ -1,11 +1,12 @@
 package tcpsocket
 
 import (
-	"strconv"
 	"bytes"
 	"encoding/json"
+	"strconv"
+
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"	
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 )
 
 func ListenToEvents() {
@@ -98,5 +99,5 @@ func (s *TcpSocket) handleVoteUpdateEvent(e *events.VoteUpdateEvent) {
 		return
 	}
 	packet := InitPacket(SC_UPDATE_VOTE, b.Bytes())
-	s.SendPacket(&packet)	
+	s.SendPacket(&packet)
 }

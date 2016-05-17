@@ -107,7 +107,7 @@ func LoadUser(id string) (*auth.User, error) {
 		return nil, err
 	}
 
-	return user, nil	
+	return user, nil
 }
 
 func GetUsers() ([]auth.User, error) {

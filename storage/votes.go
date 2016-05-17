@@ -4,10 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
 	"strconv"
 	"time"
+
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 )
 
 func NewVote(name string, owner string) (*Vote, error) {
@@ -227,8 +228,8 @@ func GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
 	}
 
 	log.Debug.Printf("%s: getting vote owner...\n", funcPrefix)
-	ownerUser, error := LoadUser("user:" + vote.Owner)	
-	if(error != nil) {
+	ownerUser, error := LoadUser("user:" + vote.Owner)
+	if error != nil {
 		log.Error.Printf("%s: getting vote owner failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}

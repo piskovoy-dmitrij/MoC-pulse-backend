@@ -101,7 +101,7 @@ func (this *Sender) send(users []auth.User, vote storage.Vote) {
 	res, error := storage.GetVoteResultStatus(vote, *ownerUser)
 	if error != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
-	} 
+	}
 	voteWithResult := res.Vote
 
 	var devices Devices

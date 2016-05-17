@@ -1,12 +1,13 @@
 package tcpsocket
 
 import (
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
-	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
 	"net"
 	"os"
+
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/events"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/log"
+	"github.com/piskovoy-dmitrij/MoC-pulse-backend/notification"
 )
 
 var notificationSender *notification.Sender
@@ -14,7 +15,7 @@ var notificationSender *notification.Sender
 type TcpSocket struct {
 	events.SomeSocket
 
-	user      auth.User
+	user       auth.User
 	connection *net.Conn
 }
 
@@ -90,7 +91,7 @@ func HandleNewConnection(c net.Conn) {
 
 		s.ProcessPacket(&packet)
 	}
-	log.Debug.Printf("%s: finish reading packets from socket connection\n", funcPrefix)	
+	log.Debug.Printf("%s: finish reading packets from socket connection\n", funcPrefix)
 }
 
 func ConnectionClosed(s *TcpSocket) {
