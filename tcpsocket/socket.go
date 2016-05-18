@@ -51,11 +51,11 @@ func ListenAndServer(host string, ns *notification.Sender, dbconn string) {
 			os.Exit(1)
 		}
 
-		go HandleNewConnection(conn)
+		go handleNewConnection(conn)
 	}
 }
 
-func HandleNewConnection(c net.Conn) {
+func handleNewConnection(c net.Conn) {
 	funcPrefix := "Handling new connection"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
@@ -71,7 +71,7 @@ func HandleNewConnection(c net.Conn) {
 	log.Debug.Printf("%s: sending new socket connection event...\n", funcPrefix)
 	*events.GetNewSocketsChan() <- events.NewSocketEvent{&s.SomeSocket}
 
-	defer ConnectionClosed(&s)
+	defer connectionClosed(&s)
 	defer log.Debug.Printf("%s: closing connection...\n", funcPrefix)
 
 	// read
@@ -98,7 +98,7 @@ func HandleNewConnection(c net.Conn) {
 	log.Debug.Printf("%s: finish reading packets from socket connection\n", funcPrefix)
 }
 
-func ConnectionClosed(s *TcpSocket) {
+func connectionClosed(s *TcpSocket) {
 	*events.GetClosedSocketsChan() <- events.SocketClosedEvent{&s.SomeSocket}
 	s.SomeSocket.CloseEvent <- &events.SocketClosedEvent{&s.SomeSocket}
 }

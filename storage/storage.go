@@ -82,16 +82,40 @@ func (this *StorageConnection) CloseStorageConnection() {
 	this.client.Close()
 }
 
+func (this *StorageConnection) getKeys(format string) ([]string, int, error) {
+	funcPrefix := fmt.Sprintf("Getting keys matching '%s' from storage", format)
+	log.Debug.Printf("%s: start\n", funcPrefix)
+	defer log.Debug.Printf("%s: end\n", funcPrefix)
+
+	var cursor int64
+	var count int
+	var resultKeys []string
+	for {
+		var keys []string
+		var err error
+		cursor, keys, err = this.client.Scan(cursor, format, 10).Result()
+		if err != nil {
+			log.Error.Printf("%s failed: %s\n", funcPrefix, err.Error())
+			return nil, 0, err
+		}
+		count += len(keys)
+		resultKeys = append(resultKeys, keys...)
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return resultKeys, count, nil
+}
+
 func (this *StorageConnection) LoadAuthToken(id string) (*auth.AuthToken, error) {
 	data, err := this.client.Get(id).Result()
 	if err != nil {
 		return nil, errors.New("Not exist")
-	} else {
-		at := &auth.AuthToken{}
-		jsonString, _ := base64.StdEncoding.DecodeString(data)
-		json.Unmarshal([]byte(jsonString), at)
-		return at, nil
 	}
+	at := &auth.AuthToken{}
+	json.Unmarshal([]byte(base64.StdEncoding.DecodeString(data)), at)
+	return at, nil
 }
 
 func (this *StorageConnection) Authenticate(token string) (*auth.User, error) {
@@ -123,8 +147,7 @@ func (this *StorageConnection) Authenticate(token string) (*auth.User, error) {
 	if err != nil {
 		log.Error.Printf("%s returns error: %s\n", funcPrefix, err.Error())
 		return nil, err
-	} else {
-		log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, user)
-		return user, nil
 	}
+	log.Debug.Printf("%s returns user [%+v]\n", funcPrefix, user)
+	return user, nil
 }

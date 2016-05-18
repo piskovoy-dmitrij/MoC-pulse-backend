@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/parnurzeal/gorequest"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
@@ -52,27 +53,36 @@ func (this *StorageConnection) GetAllUsers() ([]auth.User, error) {
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
 	log.Debug.Printf("%s: getting user keys...\n", funcPrefix)
-	users_keys, err := this.client.Keys("user:*").Result()
+	userKeys, _, err := this.getKeys("user:*")
 	if err != nil {
 		log.Error.Printf("%s: getting user keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
-	var users []auth.User
+	log.Debug.Printf("%s: getting users by keys...\n", funcPrefix)
+	data, err := this.client.MGet(userKeys).Result()
+	if err != nil {
+		log.Error.Printf("%s: getting users failed: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
 
-	log.Debug.Printf("%s: getting each user by key...\n", funcPrefix)
-	for _, value := range users_keys {
-		item, err := this.LoadUser(value)
-		if err == nil {
-			users = append(users, *item)
+	var users []auth.User
+	log.Debug.Printf("%s: unmarshaling users...\n", funcPrefix)
+	for _, value := range data {
+		user := &auth.User{}
+		err = json.Unmarshal([]byte(base64.StdEncoding.DecodeString(value)), user)
+		if err != nil {
+			log.Error.Printf("%s: unmarshaling user failed: %s\n", funcPrefix, err.Error())
+			return nil, err
 		}
+		users = append(users, *user)
 	}
 
 	return users, nil
 }
 
 func (this *StorageConnection) LoadUser(id string) (*auth.User, error) {
-	funcPrefix := "Getting user from storage"
+	funcPrefix := "Loading user from storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
@@ -84,9 +94,8 @@ func (this *StorageConnection) LoadUser(id string) (*auth.User, error) {
 	}
 
 	user := &auth.User{}
-	jsonString, _ := base64.StdEncoding.DecodeString(data)
 	log.Debug.Printf("%s: unmarshaling user...\n", funcPrefix)
-	err = json.Unmarshal([]byte(jsonString), user)
+	err = json.Unmarshal([]byte(base64.StdEncoding.DecodeString(data)), user)
 	if err != nil {
 		log.Error.Printf("%s: unmarshaling user failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -107,30 +116,33 @@ func (this *StorageConnection) GetUsers() ([]auth.User, error) {
 		return nil, errors.New("Can't get users from Auth provider")
 	}
 
-	var loaded []auth.User
+	var loadedUsers []auth.User
 	log.Debug.Printf("%s: unmarshaling users...\n", funcPrefix)
-	err := json.Unmarshal([]byte(body), &loaded)
+	err := json.Unmarshal([]byte(body), &loadedUsers)
 	if err != nil {
 		log.Error.Printf("%s: unmarshaling users failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
-	exist_users, err := this.GetAllUsers()
-
-	var user_keys map[string]auth.User = map[string]auth.User{}
-
-	for _, value := range exist_users {
-		user_keys[value.Id] = value
+	existUsers, err := this.GetAllUsers()
+	if err != nil {
+		log.Error.Printf("%s failed: %s\n", funcPrefix, err.Error())
+		return nil, err
 	}
-	var users []auth.User
 
+	userKeys := map[string]auth.User{}
+	for _, value := range existUsers {
+		userKeys[value.Id] = value
+	}
+
+	var users []auth.User
 	log.Debug.Printf("%s: populating result slice...\n", funcPrefix)
-	for _, value := range loaded {
-		existed, ok := user_keys[value.Id]
+	for _, value := range loadedUsers {
+		user, ok := userKeys[value.Id]
 		if !ok {
 			users = append(users, value)
 		} else {
-			users = append(users, existed)
+			users = append(users, user)
 		}
 	}
 
@@ -138,6 +150,6 @@ func (this *StorageConnection) GetUsers() ([]auth.User, error) {
 }
 
 func (this *StorageConnection) UsersCount() int {
-	users, _ := this.GetAllUsers()
-	return cap(users)
+	_, count, _ := this.getKeys("user:*")
+	return count
 }

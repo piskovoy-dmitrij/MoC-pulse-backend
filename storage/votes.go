@@ -58,9 +58,8 @@ func (this *StorageConnection) LoadVote(id string) (*Vote, error) {
 	}
 
 	var vote Vote
-	jsonString, _ := base64.StdEncoding.DecodeString(val)
 	log.Debug.Printf("%s: unmarshaling vote...\n", funcPrefix)
-	err = json.Unmarshal(jsonString, &vote)
+	err = json.Unmarshal(base64.StdEncoding.DecodeString(val), &vote)
 	if err != nil {
 		log.Error.Printf("%s: unmarshaling vote failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -75,22 +74,31 @@ func (this *StorageConnection) GetAllVotesWithResult(user auth.User) ([]VoteWith
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
 	log.Debug.Printf("%s: getting vote keys...\n", funcPrefix)
-	votes_keys, err := this.client.Keys("vote:*").Result()
+	voteKeys, _, err := this.getKeys("vote:*")
 	if err != nil {
 		log.Error.Printf("%s: getting vote keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
-	var votes []VoteWithResult
+	log.Debug.Printf("%s: getting votes by keys...\n", funcPrefix)
+	data, err := this.client.MGet(voteKeys).Result()
+	if err != nil {
+		log.Error.Printf("%s: getting votes failed: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
 
+	var votes []VoteWithResult
 	log.Debug.Printf("%s: getting results of each vote by key...\n", funcPrefix)
-	for _, value := range votes_keys {
-		vote, error := this.LoadVote(value)
-		if error == nil {
-			item, error2 := this.GetVoteResultStatus(*vote, user)
-			if error2 == nil {
-				votes = append(votes, item.Vote)
-			}
+	for _, value := range data {
+		vote := &Vote{}
+		err = json.Unmarshal(base64.StdEncoding.DecodeString(value), vote)
+		if err != nil {
+			log.Error.Printf("%s: unmarshaling vote failed: %s\n", funcPrefix, err.Error())
+			return nil, err
+		}
+		item, error2 := this.GetVoteResultStatus(vote, user)
+		if error2 == nil {
+			votes = append(votes, item.Vote)
 		}
 	}
 
@@ -98,39 +106,31 @@ func (this *StorageConnection) GetAllVotesWithResult(user auth.User) ([]VoteWith
 }
 
 func (this *StorageConnection) VoteProcessing(vote Vote, user auth.User, value int) error {
-	voteResult := newResult(vote, user, value)
-
-	return this.SaveResult(voteResult)
-}
-
-func (this *StorageConnection) SaveResult(result *VoteResult) error {
 	funcPrefix := "Saving result to storage"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	voteResult := &VoteResult{
+		Id:    vote.Id + ":" + user.Id,
+		Value: value,
+		Vote:  vote.Id,
+		Date:  time.Now().UnixNano(),
+	}
+
 	log.Debug.Printf("%s: marshaling result...\n", funcPrefix)
-	serialized, err := json.Marshal(result)
+	serialized, err := json.Marshal(voteResult)
 
 	if err != nil {
 		log.Error.Printf("%s: marshaling result failed: %s\n", funcPrefix, err.Error())
 		return err
 	}
-	err = this.client.Set("result:"+result.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
+	err = this.client.Set("result:"+voteResult.Id, base64.StdEncoding.EncodeToString(serialized), 0).Err()
 	if err != nil {
 		log.Error.Printf("%s: inserting result failed: %s\n", funcPrefix, err.Error())
 		return err
 	}
 
 	return nil
-}
-
-func newResult(vote Vote, user auth.User, value int) *VoteResult {
-	return &VoteResult{
-		Id:    vote.Id + ":" + user.Id,
-		Value: value,
-		Vote:  vote.Id,
-		Date:  time.Now().UnixNano(),
-	}
 }
 
 func (this *StorageConnection) LoadVoteResult(id string) (*VoteResult, error) {
@@ -145,13 +145,9 @@ func (this *StorageConnection) LoadVoteResult(id string) (*VoteResult, error) {
 		return nil, errors.New("Not exist")
 	}
 
-	jsonString, _ := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, errors.New("Not exist")
-	}
 	log.Debug.Printf("%s: unmarshaling vote result...\n", funcPrefix)
 	voteResult := &VoteResult{}
-	err = json.Unmarshal(jsonString, &voteResult)
+	err = json.Unmarshal(base64.StdEncoding.DecodeString(data), &voteResult)
 	if err != nil {
 		log.Error.Printf("%s: unmarshaling vote result failed: %s\n", funcPrefix, err.Error())
 		return nil, err
@@ -169,10 +165,10 @@ func (this *StorageConnection) IsVotedByUser(vote Vote, user auth.User) bool {
 	if err != nil {
 		log.Debug.Printf("%s: user '%s' has not voted in vote with id '%s' yet\n", funcPrefix, user.Id, vote.Id)
 		return false
-	} else {
-		log.Debug.Printf("%s: user '%s' has already voted in vote with id '%s'\n", funcPrefix, user.Id, vote.Id)
-		return true
 	}
+
+	log.Debug.Printf("%s: user '%s' has already voted in vote with id '%s'\n", funcPrefix, user.Id, vote.Id)
+	return true
 }
 
 func (this *StorageConnection) GetVoteResultStatus(vote Vote, user auth.User) (*VoteResultStatus, error) {
@@ -181,28 +177,38 @@ func (this *StorageConnection) GetVoteResultStatus(vote Vote, user auth.User) (*
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
 	log.Debug.Printf("%s: getting vote result keys...\n", funcPrefix)
-	results_keys, err := this.client.Keys("result:" + vote.Id + ":*").Result()
+	resultKeys, count, err := this.getKeys("result:" + vote.Id + ":*")
 	if err != nil {
 		log.Error.Printf("%s: getting vote result keys failed: %s\n", funcPrefix, err.Error())
+		return nil, err
+	}
+
+	log.Debug.Printf("%s: getting results by keys...\n", funcPrefix)
+	data, err := this.client.MGet(resultKeys).Result()
+	if err != nil {
+		log.Error.Printf("%s: getting results failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
 	var yellow int
 	var red int
 	var green int
-
 	log.Debug.Printf("%s: getting vote result by result key...\n", funcPrefix)
-	for _, value := range results_keys {
-		item, err := this.LoadVoteResult(value)
-
-		if err == nil {
-			if item.Value == 0 {
-				red = red + 1
-			} else if item.Value == 1 {
-				yellow = yellow + 1
-			} else {
-				green = green + 1
-			}
+	for _, item := range data {
+		voteResult := &VoteResult{}
+		log.Debug.Printf("%s: unmarshaling vote result...\n", funcPrefix)
+		err = json.Unmarshal(base64.StdEncoding.DecodeString(item), &voteResult)
+		if err != nil {
+			log.Error.Printf("%s: unmarshaling vote result failed: %s\n", funcPrefix, err.Error())
+			return nil, err
+		}
+		switch voteResult.Value {
+		case 0:
+			red++
+		case 1:
+			yellow++
+		default:
+			green++
 		}
 	}
 
@@ -225,7 +231,7 @@ func (this *StorageConnection) GetVoteResultStatus(vote Vote, user auth.User) (*
 				Green:     green,
 				Red:       red,
 				AllUsers:  this.UsersCount(),
-				VoteUsers: yellow + green + red,
+				VoteUsers: count,
 			},
 		},
 	}, nil
