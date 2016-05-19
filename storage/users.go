@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/parnurzeal/gorequest"
 	"github.com/piskovoy-dmitrij/MoC-pulse-backend/auth"
@@ -53,29 +52,34 @@ func (this *StorageConnection) GetAllUsers() ([]auth.User, error) {
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
 	log.Debug.Printf("%s: getting user keys...\n", funcPrefix)
-	userKeys, _, err := this.getKeys("user:*")
+	userKeys, count, err := this.getKeys("user:*")
 	if err != nil {
 		log.Error.Printf("%s: getting user keys failed: %s\n", funcPrefix, err.Error())
 		return nil, err
 	}
 
-	log.Debug.Printf("%s: getting users by keys...\n", funcPrefix)
-	data, err := this.client.MGet(userKeys).Result()
-	if err != nil {
-		log.Error.Printf("%s: getting users failed: %s\n", funcPrefix, err.Error())
-		return nil, err
-	}
-
 	var users []auth.User
-	log.Debug.Printf("%s: unmarshaling users...\n", funcPrefix)
-	for _, value := range data {
-		user := &auth.User{}
-		err = json.Unmarshal([]byte(base64.StdEncoding.DecodeString(value)), user)
+
+	if count > 0 {
+		log.Debug.Printf("%s: getting users by keys...\n", funcPrefix)
+		data, err := this.client.MGet(userKeys...).Result()
 		if err != nil {
-			log.Error.Printf("%s: unmarshaling user failed: %s\n", funcPrefix, err.Error())
+			log.Error.Printf("%s: getting users failed: %s\n", funcPrefix, err.Error())
 			return nil, err
 		}
-		users = append(users, *user)
+
+		
+		log.Debug.Printf("%s: unmarshaling users...\n", funcPrefix)
+		for _, value := range data {
+			user := &auth.User{}
+			jsonString, _ := base64.StdEncoding.DecodeString(value.(string))
+			err = json.Unmarshal([]byte(jsonString), user)
+			if err != nil {
+				log.Error.Printf("%s: unmarshaling user failed: %s\n", funcPrefix, err.Error())
+				return nil, err
+			}
+			users = append(users, *user)
+		}
 	}
 
 	return users, nil
@@ -95,7 +99,8 @@ func (this *StorageConnection) LoadUser(id string) (*auth.User, error) {
 
 	user := &auth.User{}
 	log.Debug.Printf("%s: unmarshaling user...\n", funcPrefix)
-	err = json.Unmarshal([]byte(base64.StdEncoding.DecodeString(data)), user)
+	jsonString, _ := base64.StdEncoding.DecodeString(data)
+	err = json.Unmarshal([]byte(jsonString), user)
 	if err != nil {
 		log.Error.Printf("%s: unmarshaling user failed: %s\n", funcPrefix, err.Error())
 		return nil, err

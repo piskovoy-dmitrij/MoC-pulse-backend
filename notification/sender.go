@@ -75,37 +75,19 @@ func NewSender(GoogleApiKey string,
 	}
 }
 
-func (this *Sender) Send(users []auth.User, vote storage.Vote, dbConnectionAddress string) {
-	go this.send(users, vote, dbConnectionAddress)
+func (this *Sender) Send(users []auth.User, voteResultStatus *storage.VoteResultStatus, dbConnectionAddress string) {
+	go this.send(users, voteResultStatus, dbConnectionAddress)
 }
 
-func (this *Sender) send(users []auth.User, vote storage.Vote, dbConnectionAddress string) {
+func (this *Sender) send(users []auth.User, voteResultStatus *storage.VoteResultStatus, dbConnectionAddress string) {
 	funcPrefix := "Sending notifications"
 	log.Debug.Printf("%s: start\n", funcPrefix)
 	defer log.Debug.Printf("%s: end\n", funcPrefix)
 
+	voteWithResult := voteResultStatus.Vote
+
 	storageConnection := storage.NewStorageConnection(dbConnectionAddress)
 	defer storageConnection.CloseStorageConnection()
-
-	ownerUser, err := storageConnection.LoadUser("user:" + vote.Owner)
-	if err != nil {
-		log.Warning.Printf("%s: loading owner user from vote failed: %s\n", funcPrefix, err.Error())
-		ownerUser = &auth.User{
-			Id:        "",
-			Email:     "",
-			Device:    2,
-			DevId:     "",
-			FirstName: "",
-			LastName:  "",
-		}
-	}
-
-	// used for getting VoteWithResult structure from Vote
-	res, error := storageConnection.GetVoteResultStatus(vote, *ownerUser)
-	if error != nil {
-		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
-	}
-	voteWithResult := res.Vote
 
 	var devices Devices
 

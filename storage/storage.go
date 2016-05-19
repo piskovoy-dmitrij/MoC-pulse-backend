@@ -93,7 +93,7 @@ func (this *StorageConnection) getKeys(format string) ([]string, int, error) {
 	for {
 		var keys []string
 		var err error
-		cursor, keys, err = this.client.Scan(cursor, format, 10).Result()
+		cursor, keys, err = this.client.Scan(cursor, format, 500).Result()
 		if err != nil {
 			log.Error.Printf("%s failed: %s\n", funcPrefix, err.Error())
 			return nil, 0, err
@@ -114,7 +114,8 @@ func (this *StorageConnection) LoadAuthToken(id string) (*auth.AuthToken, error)
 		return nil, errors.New("Not exist")
 	}
 	at := &auth.AuthToken{}
-	json.Unmarshal([]byte(base64.StdEncoding.DecodeString(data)), at)
+	jsonString, _ := base64.StdEncoding.DecodeString(data)
+	json.Unmarshal([]byte(jsonString), at)
 	return at, nil
 }
 

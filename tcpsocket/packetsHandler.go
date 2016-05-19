@@ -47,30 +47,25 @@ func (s *TcpSocket) handleNewVote(packet *PulsePacket) {
 		return
 	}
 
-	go func() {
-		conn := storage.NewStorageConnection(dbConnectionAddress)
-		defer conn.CloseStorageConnection()
-
-		log.Debug.Printf("%s: getting users from storage...\n", funcPrefix)
-		users, _ := conn.GetUsers()
-		log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
-		for p, v := range users {
-			if s.user.Id == v.Id {
-				users = append(users[:p], users[p+1:]...)
-				log.Debug.Printf("%s: vote creator has been found and succesfully removed from the list\n", funcPrefix)
-				break
-			}
-		}
-		log.Debug.Printf("%s: sending notifications to users...\n", funcPrefix)
-		notificationSender.Send(users, *vote, dbConnectionAddress)
-	}()
-
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user)
+	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user, storageConnection.UsersCount())
 	if err2 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
 	}
+
+	log.Debug.Printf("%s: getting users from storage...\n", funcPrefix)
+	users, _ := storageConnection.GetUsers()
+	log.Debug.Printf("%s: removing vote creator from notification list...\n", funcPrefix)
+	for p, v := range users {
+		if s.user.Id == v.Id {
+			users = append(users[:p], users[p+1:]...)
+			log.Debug.Printf("%s: vote creator has been found and succesfully removed from the list\n", funcPrefix)
+			break
+		}
+	}
+	log.Debug.Printf("%s: sending notifications to users...\n", funcPrefix)
+	notificationSender.Send(users, res, dbConnectionAddress)
 
 	log.Debug.Printf("%s: sending new vote event...\n", funcPrefix)
 	*events.GetNewVoteChan() <- events.NewVoteEvent{res}
@@ -104,7 +99,7 @@ func (s *TcpSocket) handleGetVote(packet *PulsePacket) {
 	log.Info.Printf("%s: vote was successfully found: [%+v]\n", funcPrefix, vote)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user)
+	res, err2 := storageConnection.GetVoteResultStatus(*vote, s.user, storageConnection.UsersCount())
 	if err2 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
@@ -181,7 +176,7 @@ func (s *TcpSocket) handleVoteFor(packet *PulsePacket) {
 	storageConnection.VoteProcessing(*vote, s.user, params.ColorId)
 
 	log.Debug.Printf("%s: getting vote result status...\n", funcPrefix)
-	res, err1 := storageConnection.GetVoteResultStatus(*vote, s.user)
+	res, err1 := storageConnection.GetVoteResultStatus(*vote, s.user, storageConnection.UsersCount())
 	if err1 != nil {
 		log.Error.Printf("%s: getting vote result status failed: %s\n", funcPrefix, err.Error())
 		return
