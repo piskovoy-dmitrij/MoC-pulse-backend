@@ -14,16 +14,16 @@ import (
 )
 
 type RegisterStatus struct {
-	Token string `json:"token"`
+	Token string `json: token`
 }
 
 type ParamSt struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name string `json: name`
+	Type string `json: type`
 }
 
 type DoVotePrm struct {
-	Value int `json:"value"`
+	Value int `json: value`
 }
 
 func createVote(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
